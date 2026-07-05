@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Questionnaire d'habiletés auditives — 15iSSQ</title>
+<style>
+  :root{
+    --bg:#f4f7f9; --card:#ffffff; --ink:#1c2b36; --muted:#5b6b78;
+    --line:#dce4ea; --brand:#0f6d8c; --brand-d:#0b4f66; --brand-l:#e3f0f5;
+    --good:#1f9d55; --good-bg:#e6f6ec; --warn:#c47f00; --warn-bg:#fdf3e0;
+    --bad:#c62f42; --bad-bg:#fbe8ea; --shadow:0 2px 10px rgba(20,50,70,.07);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.5;font-size:16px}
+  .wrap{max-width:820px;margin:0 auto;padding:20px 16px 80px}
+  header.app{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+  header.app .badge{background:var(--brand);color:#fff;width:46px;height:46px;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex:0 0 auto}
+  header.app h1{font-size:1.25rem;margin:0;line-height:1.25}
+  header.app p{margin:2px 0 0;color:var(--muted);font-size:.85rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;
+    box-shadow:var(--shadow);padding:22px;margin-top:18px}
+  h2{font-size:1.05rem;margin:0 0 12px;color:var(--brand-d)}
+  .consigne p{margin:0 0 12px;color:#33434f}
+  .example{background:var(--brand-l);border:1px solid #cfe5ee;border-radius:12px;padding:14px 16px;margin:14px 0}
+  .example .q{font-weight:600;margin-bottom:10px}
+  .idrow{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px}
+  .idrow label{flex:1 1 200px;font-size:.9rem;color:var(--muted);font-weight:600}
+  .idrow input{display:block;width:100%;margin-top:5px;padding:11px 12px;border:1px solid var(--line);
+    border-radius:10px;font-size:1rem;background:#fbfdfe}
+  .btn{appearance:none;border:none;cursor:pointer;font-size:1rem;font-weight:600;border-radius:12px;
+    padding:14px 22px;transition:.15s;font-family:inherit}
+  .btn-primary{background:var(--brand);color:#fff}
+  .btn-primary:hover{background:var(--brand-d)}
+  .btn-ghost{background:#eef3f6;color:var(--brand-d)}
+  .btn-ghost:hover{background:#e0eaef}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;margin-top:22px}
+
+  /* progress */
+  .progress-wrap{position:sticky;top:0;z-index:20;background:var(--bg);padding:10px 0 6px;margin-bottom:4px}
+  .progress-bar{height:8px;background:#e2eaef;border-radius:99px;overflow:hidden}
+  .progress-bar>span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brand),#39a7c4);
+    border-radius:99px;transition:width .25s}
+  .progress-txt{font-size:.8rem;color:var(--muted);margin-top:5px;text-align:right}
+
+  .section-title{display:flex;align-items:center;gap:10px;margin:26px 2px 6px;font-size:1rem;
+    font-weight:700;color:var(--brand-d)}
+  .section-title .n{background:var(--brand-l);color:var(--brand-d);border-radius:8px;padding:3px 10px;font-size:.8rem}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);
+    padding:18px 18px 12px;margin-top:14px}
+  .item.pending{border-left:4px solid #e0b84b}
+  .item.done{border-left:4px solid var(--good)}
+  .item .qline{display:flex;gap:12px;margin-bottom:6px}
+  .item .qnum{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;
+    font-weight:700;font-size:.9rem;display:flex;align-items:center;justify-content:center}
+  .item .qtxt{font-weight:600;padding-top:3px}
+  .na-note{font-size:.8rem;color:var(--warn);margin:2px 0 0 42px}
+  .scalebox{margin:10px 0 4px;padding-left:42px}
+  .anchors{display:flex;justify-content:space-between;font-size:.82rem;color:var(--muted);font-style:italic}
+  .rangerow{display:flex;align-items:center;gap:14px;margin-top:6px}
+  input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:34px;background:transparent;cursor:pointer}
+  input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:99px;
+    background:linear-gradient(90deg,#f0c9cd,#f5e7c4,#cde9d6)}
+  input[type=range]::-moz-range-track{height:8px;border-radius:99px;
+    background:linear-gradient(90deg,#f0c9cd,#f5e7c4,#cde9d6)}
+  /* Dégradé du curseur : toujours rouge (problème) → vert (absence de problème),
+     quel que soit le sens des ancrages. Le vert reste du côté de la bonne réponse. */
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+    background:#fff;border:3px solid var(--brand);margin-top:-9px;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:.1s}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;
+    border:3px solid var(--brand);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+  input[type=range].untouched::-webkit-slider-thumb{opacity:.25;border-color:#9bb2bd}
+  input[type=range].untouched::-moz-range-thumb{opacity:.25;border-color:#9bb2bd}
+  .valbox{flex:0 0 auto;width:58px;text-align:center;font-weight:700;font-size:1.15rem;
+    color:var(--brand-d);background:var(--brand-l);border-radius:10px;padding:6px 0}
+  .valbox.empty{color:#b3c1c9;background:#f0f4f6;font-weight:600}
+  .ticks{display:flex;justify-content:space-between;font-size:.72rem;color:#9aa8b1;margin-top:2px;padding:0 6px}
+  .naline{display:flex;align-items:center;gap:8px;margin:8px 0 2px;padding-left:42px}
+  .naline input{width:18px;height:18px;accent-color:var(--brand)}
+  .naline label{font-size:.85rem;color:var(--muted)}
+
+  .warnbanner{background:var(--warn-bg);border:1px solid #eccd8a;color:#7a5300;border-radius:12px;
+    padding:12px 14px;margin-top:16px;font-size:.9rem;display:none}
+  .warnbanner.show{display:block}
+
+  /* results */
+  .score-hero{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between}
+  .score-hero .big{font-size:2.6rem;font-weight:800;color:var(--brand-d);line-height:1}
+  .score-hero .big small{font-size:1rem;color:var(--muted);font-weight:600}
+  .pill{display:inline-block;padding:4px 12px;border-radius:99px;font-size:.82rem;font-weight:700}
+  .pill.good{background:var(--good-bg);color:var(--good)}
+  .pill.warn{background:var(--warn-bg);color:var(--warn)}
+  .pill.bad{background:var(--bad-bg);color:var(--bad)}
+  table.res{width:100%;border-collapse:collapse;margin-top:8px;font-size:.9rem}
+  table.res th,table.res td{padding:9px 8px;text-align:center;border-bottom:1px solid var(--line)}
+  table.res th{color:var(--muted);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.02em}
+  table.res td.q{text-align:left;font-weight:500}
+  table.res tr.sub td{background:var(--brand-l);font-weight:700;color:var(--brand-d)}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+  .dot.good{background:var(--good)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--bad)}
+  .ecart.good{color:var(--good);font-weight:700}
+  .ecart.warn{color:var(--warn);font-weight:700}
+  .ecart.bad{color:var(--bad);font-weight:700}
+  .bar{position:relative;height:22px;background:#eef3f6;border-radius:6px;overflow:hidden;min-width:90px}
+  .bar>i{position:absolute;top:0;bottom:0;left:0;border-radius:6px;display:block}
+  .bar>.norm{position:absolute;top:-3px;bottom:-3px;width:2px;background:#33434f}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;font-size:.82rem;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .note{font-size:.8rem;color:var(--muted);margin-top:14px;border-top:1px dashed var(--line);padding-top:12px}
+  .hidden{display:none}
+  @media print{
+    body{background:#fff}
+    .noprint{display:none!important}
+    .card,.item{box-shadow:none;border:1px solid #ccc;page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="app">
+    <div class="badge">15i<br>SSQ</div>
+    <div>
+      <h1>Questionnaire d'habiletés auditives</h1>
+      <p>Version française abrégée du Speech, Spatial and Qualities of Hearing scale (15iSSQ) — auto-questionnaire</p>
+    </div>
+  </header>
+
+  <!-- ================= ÉCRAN 1 : ACCUEIL ================= -->
+  <section id="screen-intro">
+    <div class="card consigne">
+      <h2>Conseils pour répondre aux questions</h2>
+      <p>Les questions suivantes concernent vos capacités et votre expérience en matière d'audition et d'écoute
+      dans le cadre de situations diverses.</p>
+      <p>Pour chacune des questions, déplacez le curseur sur l'échelle allant de <strong>0</strong> à <strong>10</strong>.
+      Une valeur proche de <strong>10</strong> signifie que vous êtes parfaitement capable de faire ce qui est décrit.
+      Une valeur proche de <strong>0</strong> indique que vous ne pouvez pas le faire.</p>
+      <div class="example">
+        <div class="q">Exemple — « Vous pouvez suivre une conversation avec une personne en face de vous, dans le calme. »</div>
+        <div>Si vous en êtes tout à fait capable, placez le curseur sur 10. Si vous suivez environ la moitié de la
+        conversation, placez-le vers 5, et ainsi de suite. Si vous n'y arrivez pas du tout, placez-le sur 0.</div>
+      </div>
+      <p>Si une question ne correspond pas à votre vie quotidienne, cochez la case
+      <strong>« Non applicable »</strong> : elle sera exclue du calcul.</p>
+
+      <div class="idrow">
+        <label>Identifiant (ID)
+          <input type="text" id="patientId" placeholder="ex. P-001 ou initiales" autocomplete="off">
+        </label>
+        <label>Date
+          <input type="date" id="patientDate">
+        </label>
+      </div>
+
+      <div class="actions">
+        <span></span>
+        <button class="btn btn-primary" onclick="startQuestionnaire()">Commencer le questionnaire →</button>
+      </div>
+    </div>
+    <p class="note">Références : items et normes issus de Moulin et&nbsp;al. 2015 (validation française du SSQ,
+    <em>Int. J. Audiology</em>) et Moulin et&nbsp;al. 2019 (version abrégée 15iSSQ, PAM/CRNL). Outil d'aide ;
+    ne remplace pas un bilan audiologique.</p>
+  </section>
+
+  <!-- ================= ÉCRAN 2 : QUESTIONNAIRE ================= -->
+  <section id="screen-quiz" class="hidden">
+    <div class="progress-wrap noprint">
+      <div class="progress-bar"><span id="progFill"></span></div>
+      <div class="progress-txt"><span id="progTxt">0 / 16 répondues</span></div>
+    </div>
+    <div id="items"></div>
+    <div class="warnbanner" id="warnBanner"></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="backToIntro()">← Retour</button>
+      <button class="btn btn-primary" id="resultBtn" onclick="showResults()">Voir mes résultats →</button>
+    </div>
+  </section>
+
+  <!-- ================= ÉCRAN 3 : RÉSULTATS ================= -->
+  <section id="screen-results" class="hidden">
+    <div id="resultContent"></div>
+    <div class="actions noprint">
+      <button class="btn btn-ghost" onclick="editAnswers()">← Modifier mes réponses</button>
+      <div style="display:flex;gap:12px">
+        <button class="btn btn-ghost" onclick="window.print()">Imprimer / PDF</button>
+        <button class="btn btn-primary" onclick="restart()">Nouveau questionnaire</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   DONNÉES : 16 items du 15iSSQ (+ item effort inversé)
+   norm = moyenne normo-entendants (NH), sd = écart-type (Moulin 2015)
+   full = item correspondant du SSQ 5.6 complet
+   reverse = ancrages inversés (0 = beaucoup d'efforts, score déjà orienté "haut = bon")
+   ============================================================ */
+const SECTIONS = [
+  {key:'parole',   label:'Partie 1 — Audition de la parole'},
+  {key:'spatiale', label:'Partie 2 — Audition spatiale'},
+  {key:'qualite',  label:'Partie 3 — Qualité d’audition'}
+];
+
+const ITEMS = [
+  // ---- Parole (Speech) ----
+  {sec:'parole', full:'Parole 1',
+   q:"Vous discutez avec une autre personne dans une pièce dans laquelle un téléviseur est allumé. Pouvez-vous suivre les propos de votre interlocuteur sans baisser le son du téléviseur ?",
+   norm:8.8, sd:1.6},
+  {sec:'parole', full:'Parole 4',
+   q:"Vous êtes assis autour d’une table avec un groupe de cinq personnes environ, dans un restaurant animé. Vous pouvez voir toutes les personnes du groupe. Pouvez-vous suivre la conversation ?",
+   norm:8.7, sd:1.4},
+  {sec:'parole', full:'Parole 5',
+   q:"Vous discutez avec une autre personne. Il y a un bruit de fond continu (ventilateur ou eau qui coule par exemple). Pouvez-vous suivre ce que dit l’autre personne ?",
+   norm:9.3, sd:1.1},
+  {sec:'parole', full:'Parole 6',
+   q:"Vous êtes assis autour d’une table avec un groupe de cinq personnes environ, dans un restaurant animé. Vous NE pouvez PAS voir toutes les personnes du groupe. Pouvez-vous suivre la conversation ?",
+   norm:7.5, sd:1.8},
+  {sec:'parole', full:'Parole 11',
+   q:"Vous discutez avec quelqu’un dans une pièce dans laquelle beaucoup d’autres personnes parlent. Pouvez-vous suivre ce que vous dit votre interlocuteur ?",
+   norm:7.8, sd:1.8},
+  // ---- Spatiale (Spatial) ----
+  {sec:'spatiale', full:'Spatial 2',
+   q:"Vous êtes assis autour d’une table ou participez à une réunion avec plusieurs personnes. Vous ne pouvez pas voir toutes les personnes. Pouvez-vous dire où est chaque personne dès qu’elle prend la parole ?",
+   norm:8.2, sd:1.7},
+  {sec:'spatiale', full:'Spatial 6',
+   q:"Vous êtes à l’extérieur. Un chien aboie bruyamment. Pouvez-vous indiquer immédiatement où il se trouve, sans regarder ?",
+   norm:7.9, sd:2.1},
+  {sec:'spatiale', full:'Spatial 7',
+   q:"Vous êtes sur le trottoir d’une rue animée. Pouvez-vous entendre immédiatement de quelle direction un bus ou un camion arrive avant de l’avoir vu ?",
+   norm:7.6, sd:2.0},
+  {sec:'spatiale', full:'Spatial 11',
+   q:"Pouvez-vous indiquer dans quelle direction une personne se déplace, uniquement au son de sa voix ou de ses pas, par exemple de votre gauche à votre droite ou inversement ?",
+   norm:8.0, sd:1.9},
+  {sec:'spatiale', full:'Spatial 17',
+   q:"Pouvez-vous évaluer correctement l’endroit d’où les sons proviennent ?",
+   norm:7.9, sd:1.6},
+  // ---- Qualité (Qualities) ----
+  {sec:'qualite', full:'Qualité 4',
+   q:"Pouvez-vous reconnaître facilement les différentes personnes que vous connaissez, au son de leur voix ?",
+   norm:9.5, sd:0.9},
+  {sec:'qualite', full:'Qualité 5',
+   q:"Pouvez-vous reconnaître facilement les différents morceaux de musique que vous connaissez ?",
+   norm:9.5, sd:1.0},
+  {sec:'qualite', full:'Qualité 6',
+   q:"Pouvez-vous différencier certains bruits, par exemple une voiture par rapport à un bus ou de l’eau qui bout par rapport à la nourriture qui frit dans une poêle ?",
+   norm:9.5, sd:0.9},
+  {sec:'qualite', full:'Qualité 8',
+   q:"Lorsque vous écoutez de la musique, est-ce qu’elle vous semble claire et naturelle ?",
+   norm:9.3, sd:2.0},
+  {sec:'qualite', full:'Qualité 9',
+   q:"Les bruits quotidiens que vous entendez facilement, vous semblent-ils clairs et distincts (non brouillés, non mélangés) ?",
+   norm:9.3, sd:1.2},
+  // ---- Item 16 : effort (ancrages inversés) ----
+  {sec:'qualite', full:'Qualité 15 (effort)', effort:true, reverse:true,
+   q:"Devez-vous faire beaucoup d’efforts pour comprendre ce qui se dit au cours d’une conversation avec d’autres personnes ?",
+   anchorLow:"Oui, beaucoup d’efforts", anchorHigh:"Non, aucun effort",
+   norm:8.5, sd:1.5, normNote:"norme de référence : item pragmatique d’effort du SSQ complet (Moulin 2015)"}
+];
+
+const N = ITEMS.length;                 // 16
+const answers = new Array(N).fill(null);// valeur 0-10
+const naFlags = new Array(N).fill(false);
+
+/* ---------- construction du questionnaire ---------- */
+function buildItems(){
+  const host = document.getElementById('items');
+  host.innerHTML = '';
+  let secShown = {};
+  ITEMS.forEach((it, i)=>{
+    if(!secShown[it.sec]){
+      secShown[it.sec]=true;
+      const s = SECTIONS.find(x=>x.key===it.sec);
+      const st = document.createElement('div');
+      st.className='section-title';
+      st.innerHTML = `<span class="n">${s.label.split('—')[0].trim()}</span> ${s.label.split('—')[1].trim()}`;
+      host.appendChild(st);
+    }
+    const low = it.anchorLow || 'Non, pas du tout';
+    const high = it.anchorHigh || 'Oui, parfaitement';
+    const el = document.createElement('div');
+    el.className='item pending';
+    el.id='item-'+i;
+    el.innerHTML = `
+      <div class="qline">
+        <div class="qnum">${i+1}</div>
+        <div class="qtxt">${it.q}${it.effort?' <span style="color:var(--warn);font-size:.8rem;font-weight:600">(échelle inversée)</span>':''}</div>
+      </div>
+      <div class="scalebox">
+        <div class="anchors"><span>${low}</span><span>${high}</span></div>
+        <div class="rangerow">
+          <input type="range" min="0" max="10" step="0.1" value="5" class="untouched"
+                 id="range-${i}" oninput="onSlide(${i})" aria-label="Réponse question ${i+1}">
+          <div class="valbox empty" id="val-${i}">—</div>
+        </div>
+        <div class="ticks"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+      </div>
+      <div class="naline">
+        <input type="checkbox" id="na-${i}" onchange="onNA(${i})">
+        <label for="na-${i}">Non applicable (cette situation ne me concerne pas)</label>
+      </div>`;
+    host.appendChild(el);
+  });
+  updateProgress();
+}
+
+function onSlide(i){
+  if(naFlags[i]) return;
+  const r = document.getElementById('range-'+i);
+  r.classList.remove('untouched');
+  const v = parseFloat(r.value);
+  answers[i]=v;
+  const vb = document.getElementById('val-'+i);
+  vb.textContent = v.toFixed(1);
+  vb.classList.remove('empty');
+  document.getElementById('item-'+i).classList.replace('pending','done');
+  updateProgress();
+}
+
+function onNA(i){
+  const na = document.getElementById('na-'+i).checked;
+  naFlags[i]=na;
+  const r = document.getElementById('range-'+i);
+  const vb = document.getElementById('val-'+i);
+  const item = document.getElementById('item-'+i);
+  if(na){
+    answers[i]=null;
+    r.disabled=true; r.classList.add('untouched');
+    vb.textContent='N/A'; vb.classList.remove('empty');
+    item.classList.remove('pending'); item.classList.add('done');
+  }else{
+    r.disabled=false; r.classList.add('untouched');
+    vb.textContent='—'; vb.classList.add('empty');
+    item.classList.remove('done'); item.classList.add('pending');
+  }
+  updateProgress();
+}
+
+function answeredCount(){
+  let c=0; for(let i=0;i<N;i++){ if(naFlags[i]||answers[i]!==null) c++; } return c;
+}
+function updateProgress(){
+  const c=answeredCount();
+  document.getElementById('progFill').style.width=(100*c/N)+'%';
+  document.getElementById('progTxt').textContent=`${c} / ${N} répondues`;
+  document.getElementById('resultBtn').disabled = (c<N);
+}
+
+/* ---------- navigation ---------- */
+function startQuestionnaire(){
+  const d=document.getElementById('patientDate');
+  if(!d.value){ d.value=new Date().toISOString().slice(0,10); }
+  document.getElementById('screen-intro').classList.add('hidden');
+  document.getElementById('screen-quiz').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+function backToIntro(){
+  document.getElementById('screen-quiz').classList.add('hidden');
+  document.getElementById('screen-intro').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+function editAnswers(){
+  document.getElementById('screen-results').classList.add('hidden');
+  document.getElementById('screen-quiz').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+function restart(){
+  for(let i=0;i<N;i++){answers[i]=null;naFlags[i]=false;}
+  document.getElementById('patientId').value='';
+  buildItems();
+  document.getElementById('screen-results').classList.add('hidden');
+  document.getElementById('screen-quiz').classList.add('hidden');
+  document.getElementById('screen-intro').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+/* ---------- classification écart (z = (score-norm)/sd) ---------- */
+function cls(z){
+  if(z>=-1) return 'good';      // dans la norme
+  if(z>=-2) return 'warn';      // limite
+  return 'bad';                 // sous le seuil -2 SD
+}
+function clsLabel(z){
+  if(z>=-1) return 'Dans la norme';
+  if(z>=-2) return 'Limite';
+  return 'Sous la norme';
+}
+
+/* moyenne + norme d'un sous-ensemble d'index (hors N/A) */
+function subscale(idx){
+  let s=0,ns=0,n=0;
+  idx.forEach(i=>{ if(!naFlags[i]&&answers[i]!==null){ s+=answers[i]; ns+=ITEMS[i].norm; n++; }});
+  if(n===0) return null;
+  return {mean:s/n, norm:ns/n, n:n};
+}
+
+/* ---------- résultats ---------- */
+function showResults(){
+  if(answeredCount()<N) return;
+  const idxParole   =[0,1,2,3,4];
+  const idxSpatiale =[5,6,7,8,9];
+  const idxQualite  =[10,11,12,13,14];      // 5 items standard (hors effort)
+  const idxGlobal   =[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14]; // 15 items 15iSSQ
+
+  const sub = {
+    parole:   subscale(idxParole),
+    spatiale: subscale(idxSpatiale),
+    qualite:  subscale(idxQualite),
+    global:   subscale(idxGlobal)
+  };
+  // SD de référence par sous-échelle (Moulin 2015)
+  const subSD = {parole:1.02, spatiale:1.46, qualite:0.90, global:1.00};
+
+  const id=document.getElementById('patientId').value||'—';
+  const dt=document.getElementById('patientDate').value||'—';
+
+  let html = `<div class="card">
+    <div class="score-hero">
+      <div>
+        <h2 style="margin-bottom:4px">Résultats — 15iSSQ</h2>
+        <div style="color:var(--muted);font-size:.9rem">ID : <strong>${escapeHtml(id)}</strong> &nbsp;·&nbsp; Date : <strong>${dt}</strong></div>
+      </div>
+      <div style="text-align:right">
+        <div class="big">${sub.global.mean.toFixed(2)}<small> / 10</small></div>
+        ${scorePill(sub.global.mean, sub.global.norm, subSD.global)}
+      </div>
+    </div>`;
+
+  // synthèse par partie
+  html += `<table class="res"><thead><tr>
+      <th class="q" style="text-align:left">Partie</th><th>Votre score</th><th>Norme NH</th><th>Écart</th><th>Visuel</th><th>Statut</th>
+    </tr></thead><tbody>`;
+  html += subRow('Audition de la parole', sub.parole, subSD.parole);
+  html += subRow('Audition spatiale',     sub.spatiale, subSD.spatiale);
+  html += subRow('Qualité d’audition',   sub.qualite, subSD.qualite);
+  html += subRow('SCORE GLOBAL (15 items)',sub.global, subSD.global, true);
+  html += `</tbody></table>`;
+
+  html += `<div class="legend">
+     <span><span class="dot good"></span>Dans la norme (≥ −1 ET)</span>
+     <span><span class="dot warn"></span>Limite (−1 à −2 ET)</span>
+     <span><span class="dot bad"></span>Sous la norme (< −2 ET, seuil pathologique)</span>
+     <span>ET = écart-type des normo-entendants · NH = normo-entendant</span>
+  </div></div>`;
+
+  // détail par item
+  html += `<div class="card"><h2>Détail par question</h2>
+    <table class="res"><thead><tr>
+      <th style="width:26px">#</th><th class="q" style="text-align:left">Question</th>
+      <th>Score</th><th>Norme</th><th>Écart</th><th>Statut</th>
+    </tr></thead><tbody>`;
+  let curSec=null;
+  ITEMS.forEach((it,i)=>{
+    if(it.sec!==curSec){
+      curSec=it.sec;
+      const s=SECTIONS.find(x=>x.key===it.sec);
+      html+=`<tr class="sub"><td></td><td class="q">${s.label}</td><td colspan="4"></td></tr>`;
+    }
+    if(naFlags[i]){
+      html+=`<tr><td>${i+1}</td><td class="q">${shortQ(it)}</td><td>N/A</td><td>${it.norm.toFixed(1)}</td><td>—</td><td><span style="color:var(--muted)">Exclu</span></td></tr>`;
+    }else{
+      const z=(answers[i]-it.norm)/it.sd;
+      const ec=answers[i]-it.norm;
+      const c=cls(z);
+      html+=`<tr><td>${i+1}</td><td class="q">${shortQ(it)}${it.effort?' <em style="color:var(--warn)">(inversé)</em>':''}</td>
+        <td><strong>${answers[i].toFixed(1)}</strong></td>
+        <td>${it.norm.toFixed(1)}</td>
+        <td class="ecart ${c}">${ec>=0?'+':''}${ec.toFixed(1)}</td>
+        <td><span class="dot ${c}"></span>${clsLabel(z)}</td></tr>`;
+    }
+  });
+  html+=`</tbody></table>`;
+  html+=`<p class="note"><strong>Lecture.</strong> « Écart » = votre score moins la moyenne des normo-entendants (points sur 10).
+     Un écart négatif indique une performance perçue inférieure à celle des normo-entendants. Le statut compare cet écart
+     à l'écart-type de la population de référence ; en dessous de −2 écarts-types, la valeur atteint le seuil considéré
+     comme pathologique dans les données normatives. L'item 16 (effort) utilise une échelle inversée
+     (${escapeHtml(ITEMS[15].normNote)}). Cet outil est une aide et ne remplace pas un bilan audiologique complet.</p>`;
+  html+=`</div>`;
+
+  document.getElementById('resultContent').innerHTML=html;
+  document.getElementById('screen-quiz').classList.add('hidden');
+  document.getElementById('screen-results').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function subRow(name, s, sd, strong){
+  if(!s) return `<tr${strong?' class="sub"':''}><td class="q">${name}</td><td colspan="5">—</td></tr>`;
+  const ec=s.mean-s.norm;
+  const z=ec/sd;
+  const c=cls(z);
+  const style=strong?' style="font-weight:800"':'';
+  return `<tr${strong?' class="sub"':''}>
+    <td class="q"${style}>${name}</td>
+    <td${style}><strong>${s.mean.toFixed(2)}</strong></td>
+    <td>${s.norm.toFixed(2)}</td>
+    <td class="ecart ${c}">${ec>=0?'+':''}${ec.toFixed(2)}</td>
+    <td>${miniBar(s.mean,s.norm)}</td>
+    <td><span class="dot ${c}"></span>${clsLabel(z)}</td></tr>`;
+}
+
+function miniBar(v,norm){
+  const w=Math.max(0,Math.min(100,v*10));
+  const nx=Math.max(0,Math.min(100,norm*10));
+  const col = v>=norm-0.001 ? 'var(--good)' : (v>=norm-1.5?'var(--warn)':'var(--bad)');
+  return `<div class="bar"><i style="width:${w}%;background:${col}"></i><span class="norm" style="left:${nx}%"></span></div>`;
+}
+
+function scorePill(v,norm,sd){
+  const z=(v-norm)/sd; const c=cls(z);
+  return `<span class="pill ${c}">${clsLabel(z)} · norme ${norm.toFixed(2)}</span>`;
+}
+
+function shortQ(it){
+  const q=it.q; return q.length>90? q.slice(0,88)+'…' : q;
+}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* init */
+document.getElementById('patientDate').value=new Date().toISOString().slice(0,10);
+buildItems();
+</script>
+</body>
+</html>

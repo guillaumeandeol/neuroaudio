@@ -2,103 +2,148 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NeuroAudio — Applications à télécharger</title>
-<meta name="description" content="NeuroAudio — téléchargez nos applications audio.">
-<style>
-  :root{
-    --bg:#0d1117; --card:#161b22; --border:#30363d;
-    --accent:#3fb6ff; --accent2:#7c5cff;
-    --text:#e6edf3; --muted:#9aa7b4;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:var(--bg); color:var(--text); line-height:1.6;
-  }
-  a{color:inherit;text-decoration:none}
-  .wrap{max-width:1000px;margin:0 auto;padding:0 24px}
-
-  header{
-    text-align:center; padding:80px 24px 60px;
-    background:radial-gradient(ellipse at top,rgba(124,92,255,.18),transparent 60%);
-  }
-  .logo{
-    display:inline-flex;align-items:center;gap:12px;
-    font-size:32px;font-weight:800;letter-spacing:-.5px;margin-bottom:16px;
-  }
-  .logo .dot{
-    width:14px;height:14px;border-radius:50%;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    box-shadow:0 0 20px var(--accent);
-  }
-  header p{color:var(--muted);font-size:18px;max-width:560px;margin:0 auto}
-
-  section{padding:40px 0}
-  h2{font-size:22px;margin-bottom:24px;font-weight:700}
-
-  .apps{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
-  .app{
-    background:var(--card);border:1px solid var(--border);border-radius:16px;
-    padding:28px;display:flex;flex-direction:column;transition:.2s;
-  }
-  .app:hover{border-color:var(--accent);transform:translateY(-4px)}
-  .app .icon{
-    width:56px;height:56px;border-radius:14px;margin-bottom:18px;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    display:flex;align-items:center;justify-content:center;font-size:26px;
-  }
-  .app h3{font-size:19px;margin-bottom:8px}
-  .app p{color:var(--muted);font-size:15px;flex:1;margin-bottom:20px}
-  .app .meta{font-size:13px;color:var(--muted);margin-bottom:16px}
-  .btn{
-    display:inline-block;text-align:center;padding:12px 20px;border-radius:10px;
-    font-weight:600;background:linear-gradient(135deg,var(--accent),var(--accent2));
-    color:#fff;transition:.2s;
-  }
-  .btn:hover{filter:brightness(1.1)}
-
-  footer{
-    text-align:center;padding:50px 24px;color:var(--muted);font-size:14px;
-    border-top:1px solid var(--border);margin-top:40px;
-  }
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Vega — Audiométrie vocale dans le bruit (CRM)</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header>
-  <div class="logo"><span class="dot"></span>NeuroAudio</div>
-  <p>Des applications audio à télécharger gratuitement. Simples, rapides, efficaces.</p>
+<header class="topbar">
+  <div class="brand">Vega <span class="brand-sub">CRM — audiométrie vocale dans le bruit</span></div>
+  <div id="trialCounter" class="trial-counter"></div>
 </header>
 
-<main class="wrap">
-  <section>
-    <h2>Nos applications</h2>
-    <div class="apps">
+<div class="institution-bar">
+  <div class="institution-logos">
+    <span class="logo-badge" id="logoSSA" title="Service de Santé des Armées">SSA</span>
+    <span class="logo-badge" id="logoIRBA" title="Institut de Recherche Biomédicale des Armées">IRBA</span>
+  </div>
+  <span class="motto">« La connaissance au service des forces »</span>
+</div>
 
-      <div class="app">
-        <div class="icon">👂</div>
-        <h3>Questionnaire 15iSSQ</h3>
-        <p>Questionnaire d'habiletés auditives : écoute de la parole, audition spatiale et qualité d'écoute. S'utilise directement dans le navigateur.</p>
-        <div class="meta">Application web · Aucun téléchargement</div>
-        <a class="btn" href="questionnaire_SSQ.html" target="_blank" rel="noopener">Ouvrir l'application</a>
-      </div>
+<main id="app">
 
-      <div class="app">
-        <div class="icon">🔊</div>
-        <h3>Vega — Test CRM</h3>
-        <p>Test d'écoute de la parole dans le bruit (Coordinate Response Measure) : écoutez les phrases et répondez via la grille de couleurs. 32 phrases intégrées.</p>
-        <div class="meta">Application web · Aucun téléchargement</div>
-        <a class="btn" href="crm_standalone.html" target="_blank" rel="noopener">Ouvrir l'application</a>
-      </div>
+  <!-- ===================== ÉCRAN 1 : ACCUEIL / CONFIGURATION ===================== -->
+  <section id="screen-setup" class="screen active">
+    <h1>Configuration du test</h1>
 
+    <div class="card">
+      <label>Identifiant participant (optionnel)
+        <input type="text" id="participantId" placeholder="ex. P01">
+      </label>
+
+      <label>Indicatif d'appel cible
+        <select id="targetCallsign">
+          <option>Alpha</option>
+          <option>Charlie</option>
+          <option value="Delta">Delta</option>
+          <option>Echo</option>
+          <option>Kilo</option>
+          <option>Oscar</option>
+          <option>Tango</option>
+          <option>Whisky</option>
+        </select>
+      </label>
+      <p class="hint">Le participant doit toujours répondre à la couleur et au chiffre suivant cet indicatif, quelle que soit la voix.</p>
     </div>
+
+    <div class="card">
+      <h2>SNR</h2>
+      <p class="hint">Le rapport signal/bruit est fixé à <strong>-9 dB</strong> pour le test principal.</p>
+      <label>Nombre d'essais <input type="number" id="numTrials" value="32" min="1"></label>
+      <p class="hint">La conclusion clinique automatique (normal / anormal / ambigu) n'est calculée que pour 32 essais.</p>
+    </div>
+
+    <div class="card">
+      <h2>Bruit de masquage</h2>
+      <div class="radio-row">
+        <label><input type="radio" name="noiseType" value="corpus" checked> Bruit calé sur le corpus (utilisé précédemment)</label>
+        <label><input type="radio" name="noiseType" value="standard"> Bruit speech-shaped standard (spectre long terme de la parole)</label>
+      </div>
+      <button id="btnPreviewCorpus" class="btn-secondary" style="display:block;width:100%">▶ Écouter le bruit corpus</button>
+      <button id="btnPreviewStandard" class="btn-secondary" style="display:block;width:100%;margin-top:8px">▶ Écouter le bruit standard</button>
+    </div>
+
+    <div class="card">
+      <h2>Entraînement</h2>
+      <label>Essais d'entraînement (non comptabilisés) <input type="number" id="practiceTrials" value="4" min="0"></label>
+    </div>
+
+    <div class="card" id="cardSnrCheck">
+      <h2>Vérification du SNR</h2>
+      <p class="hint">Écoutez le bruit et la voix séparément, aux niveaux exacts appliqués pendant le test, puis mélangés. Le niveau réellement envoyé à la sortie est mesuré pour chaque source, ce qui donne le SNR effectivement produit.</p>
+
+      <label style="max-width:220px">SNR à vérifier (dB)
+        <input type="number" id="verifSnr" value="-9" step="0.5">
+      </label>
+
+      <p class="hint" id="verifStimulus"></p>
+      <button id="btnVerifNewStim" class="btn-link" style="padding-left:0">↻ Tirer une autre phrase</button>
+
+      <div class="verif-buttons">
+        <button id="btnVerifNoise" class="btn-secondary">▶ Bruit seul</button>
+        <button id="btnVerifVoice" class="btn-secondary">▶ Voix seule</button>
+        <button id="btnVerifMix" class="btn-secondary">▶ Mélange</button>
+      </div>
+      <button id="btnVerifStop" class="btn-link">■ Arrêter la lecture</button>
+
+      <div id="verifMeasure" class="verif-measure"></div>
+
+      <div class="verif-offline-controls">
+        <label style="max-width:260px">Phrases à analyser pour la dispersion (0 = aucune)
+          <input type="number" id="verifNbPhrases" value="20" min="0" max="256">
+        </label>
+        <button id="btnVerifAnalyse" class="btn-secondary" style="width:100%">Analyse hors-ligne (décodage exact)</button>
+      </div>
+      <div id="verifOffline" class="verif-measure"></div>
+    </div>
+
+    <div class="card">
+      <h2>Réglage du volume</h2>
+      <p class="hint">Ajustez le volume de votre appareil à un niveau confortable avant de commencer, puis ne le modifiez plus pendant le test.</p>
+    </div>
+
+    <button id="btnStart" class="btn-primary">Démarrer le test</button>
+
+    <p class="disclaimer">Prototype de recherche — ceci n'est pas un dispositif médical calibré. Les niveaux SNR sont relatifs et ne correspondent pas à des dB SPL absolus tant que la chaîne audio n'a pas été calibrée.</p>
   </section>
+
+  <!-- ===================== ÉCRAN 2 : TEST ===================== -->
+  <section id="screen-test" class="screen">
+    <div class="test-status">
+      <span id="phaseLabel">Entraînement</span>
+      <span id="snrLabel"></span>
+    </div>
+    <div class="live-score" id="liveScore"></div>
+
+    <div class="listen-zone">
+      <button id="btnPlay" class="btn-play">▶ Écouter la phrase</button>
+      <button id="btnReplay" class="btn-secondary" style="display:none">↺ Réécouter (1 fois)</button>
+    </div>
+
+    <p class="instruction">Cliquez sur la couleur et le chiffre entendus après l'indicatif <strong id="callsignReminder"></strong>.</p>
+
+    <div id="grid" class="grid"></div>
+
+    <button id="btnStop" class="btn-link">Arrêter le test</button>
+  </section>
+
+  <!-- ===================== ÉCRAN 3 : RÉSULTATS ===================== -->
+  <section id="screen-results" class="screen">
+    <h1>Résultats</h1>
+    <div id="resultsConclusion" class="card"></div>
+    <div id="resultsSummary" class="card"></div>
+    <canvas id="resultsChart" width="600" height="300"></canvas>
+    <div class="results-actions">
+      <button id="btnExport" class="btn-primary">⬇ Exporter en CSV</button>
+      <button id="btnRestart" class="btn-secondary">Nouveau test</button>
+    </div>
+    <table id="resultsTable" class="results-table"></table>
+  </section>
+
 </main>
 
-<footer>
-  © 2026 NeuroAudio · Contact : <a href="mailto:guillaume.andeol@gmail.com">guillaume.andeol@gmail.com</a>
-</footer>
-
+<script src="audio/manifest.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-# Vega — CRM audiométrie vocale dans le bruit (prototype web)
+# Vegah — CRM audiométrie vocale dans le bruit (prototype web)
 
 Prototype de test d'intelligibilité de la parole dans le bruit basé sur le corpus **CRM français**
 (Isnard, Chastres & Andéol, 2024, *JASA Express Letters* 4, 075203).
@@ -147,6 +147,19 @@ Réglages figés (bloc `<div hidden id="fixedConfig">` en haut du fichier, seul 
   `-` et `_`, limité à 20 caractères — l'identifiant part à la fois dans le nom du fichier CSV et dans
   une colonne du CSV, une virgule ou un `/` y casserait tout. L'identifiant figure désormais dans la
   colonne `participant` de chaque ligne exportée, et plus seulement dans le nom du fichier.
+- **Message de vigilance** : un bandeau en tête de l'écran d'accueil prévient le sujet qu'il s'agit d'une
+  version en cours de développement, que ce n'est pas un examen médical et que les résultats ne
+  constituent ni un diagnostic ni une évaluation de son audition ; il l'invite à consulter en cas de gêne
+  auditive. Un rappel plus court est répété en tête de l'écran de résultats, juste au-dessus de la
+  conclusion — c'est là que le risque de mésinterprétation est le plus grand, puisque le sujet y voit
+  une mention « normal » ou « anormal ». Classe CSS `.vigilance`.
+- **Acquittement obligatoire** : une case à cocher (`#ackDev`) au bas du bandeau doit être validée avant
+  que le test ne démarre. Elle est branchée via `addStartGuard()` dans `app.js` — une page enregistre une
+  fonction qui renvoie `false` pour refuser le lancement et affiche son propre message ; `index.html`
+  n'en enregistre aucune et démarre donc sans condition. Si l'identifiant et la case manquent tous les
+  deux, les deux messages s'affichent et le focus va au premier bloc en défaut.
+- **Nouvelle passation** : « Nouveau test » remet l'identifiant à vide et décoche la case, pour que le
+  sujet suivant ne parte pas avec l'identifiant et l'acquittement du précédent.
 - **Fin de test** : le sujet voit l'écran de résultats complet (conclusion clinique, scores, export CSV).
 - **Interruption** : le lien discret en bas de l'écran de test demande confirmation avant d'arrêter.
   Son id est `btnStopPatient` (et non `btnStop`) pour que `app.js` ne le câble pas directement.

@@ -8,6 +8,7 @@
   --accent-dark: #2f5fce;
   --ok: #34c77b;
   --bad: #ff5c6c;
+  --warn: #f0b429;
 
   --c-bleu: #2f6fed;
   --c-jaune: #e8c33a;
@@ -265,4 +266,60 @@ button {
   margin: 18px 0 8px;
   padding-top: 14px;
   border-top: 1px solid var(--panel-border);
+}
+
+/* ---------------------------------------------- message de vigilance */
+.vigilance {
+  background: rgba(240, 180, 41, 0.08);
+  border: 1px solid rgba(240, 180, 41, 0.45);
+  border-left: 4px solid var(--warn);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.vigilance p { margin: 0 0 8px; font-size: 0.9rem; line-height: 1.45; }
+.vigilance p:last-child { margin-bottom: 0; }
+.vigilance-title {
+  color: var(--warn);
+  font-weight: 700;
+  font-size: 0.95rem !important;
+}
+.vigilance-title::before { content: "⚠ "; }
+
+.vigilance .ack {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(240, 180, 41, 0.3);
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.vigilance .ack input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--warn);
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+.vigilance .field-error { margin-top: 8px; }
+
+.gsp-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 5px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  background: rgba(79, 140, 255, 0.10);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
 }

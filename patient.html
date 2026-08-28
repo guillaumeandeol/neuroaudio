@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Vega — Test d'audition dans le bruit</title>
+<title>Vegah — Test d'audition dans le bruit</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header class="topbar">
-  <div class="brand">Vega <span class="brand-sub">Test d'audition dans le bruit</span></div>
+  <div class="brand">Vegah <span class="brand-sub">Test d'audition dans le bruit</span></div>
   <div id="trialCounter" class="trial-counter"></div>
 </header>
 
@@ -19,6 +19,7 @@
     <span class="logo-badge" id="logoIRBA" title="Institut de Recherche Biomédicale des Armées">IRBA</span>
   </div>
   <span class="motto">« La connaissance au service des forces »</span>
+  <span class="gsp-badge">GSP Bruit</span>
 </div>
 
 <main id="app">
@@ -39,6 +40,22 @@
   <!-- ===================== ÉCRAN 1 : ACCUEIL SUJET ===================== -->
   <section id="screen-setup" class="screen active">
     <h1>Avant de commencer</h1>
+
+    <div class="vigilance" role="note">
+      <p class="vigilance-title">Version en cours de développement</p>
+      <p>Ce test est un <strong>prototype de recherche</strong>, encore en cours de mise au point.
+      Ce n'est pas un examen médical : les résultats affichés à la fin ne constituent
+      <strong>ni un diagnostic, ni une évaluation de votre audition</strong>, et ne doivent pas être
+      interprétés comme tels.</p>
+      <p>Si vous ressentez une gêne auditive, parlez-en à un médecin ou à un service d'audiologie.</p>
+
+      <label class="ack" for="ackDev">
+        <input type="checkbox" id="ackDev">
+        <span>J'ai lu et compris qu'il s'agit d'une version en cours de développement, dont les
+        résultats n'ont pas de valeur diagnostique.</span>
+      </label>
+      <p class="field-error" id="ackDevError">Merci de cocher cette case avant de commencer.</p>
+    </div>
 
     <div class="card">
       <h2>Identification</h2>
@@ -104,6 +121,10 @@
   <!-- ===================== ÉCRAN 3 : RÉSULTATS ===================== -->
   <section id="screen-results" class="screen">
     <h1>Résultats</h1>
+    <div class="vigilance" role="note">
+      <p>Résultats obtenus avec une <strong>version en cours de développement</strong> : ils n'ont
+      aucune valeur diagnostique et ne remplacent pas un bilan auditif réalisé par un professionnel.</p>
+    </div>
     <div id="resultsConclusion" class="card"></div>
     <div id="resultsSummary" class="card"></div>
     <canvas id="resultsChart" width="600" height="300"></canvas>
@@ -129,6 +150,27 @@
 
   on("#participantId", "input", () => {
     $("#participantIdError").style.display = "none";
+  });
+
+  // Le test ne démarre pas tant que le message de vigilance n'est pas acquitté.
+  addStartGuard(() => {
+    const box = $("#ackDev");
+    if (box.checked) return true;
+    $("#ackDevError").style.display = "block";
+    box.focus();
+    return false;
+  });
+  on("#ackDev", "change", () => {
+    if ($("#ackDev").checked) $("#ackDevError").style.display = "none";
+  });
+
+  // Nouvelle passation : on repart d'une page vierge pour le sujet suivant,
+  // sans son identifiant ni l'acquittement du précédent.
+  on("#btnRestart", "click", () => {
+    $("#participantId").value = "";
+    $("#ackDev").checked = false;
+    $("#participantIdError").style.display = "none";
+    $("#ackDevError").style.display = "none";
   });
 
   let volumeEl = null;

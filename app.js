@@ -1,4 +1,4 @@
-/* Vega — CRM (Coordinate Response Measure) speech-in-noise test
+/* Vegah — CRM (Coordinate Response Measure) speech-in-noise test
    Prototype web app. Based on:
    Isnard, Chastres & Andéol (2024), "French version of the coordinate
    response measure corpus and its validation on a speech-on-speech task",
@@ -67,6 +67,13 @@ const state = {
 
 function $(sel) { return document.querySelector(sel); }
 function $all(sel) { return Array.from(document.querySelectorAll(sel)); }
+
+// Verrous de démarrage : une page peut refuser le lancement du test en
+// enregistrant ici une fonction qui renvoie false pour bloquer (à charge pour
+// elle d'afficher son propre message). Permet à patient.html d'ajouter ses
+// conditions sans que app.js ait à les connaître.
+const startGuards = [];
+function addStartGuard(fn) { startGuards.push(fn); }
 
 // Câblage tolérant : toutes les pages n'ont pas tous les boutons (la page
 // patient n'a ni écran de configuration ni carte de vérification du SNR).
@@ -699,15 +706,19 @@ function readConfig() {
 }
 
 async function startSession() {
+  let blocked = false;
+  for (const guard of startGuards) if (guard() === false) blocked = true;
+
   // Le champ identifiant n'est obligatoire que sur les pages qui le déclarent
   // avec l'attribut natif "required" (page patient) — ailleurs, rien ne change.
   const idInput = $("#participantId");
   if (idInput && idInput.required && !sanitizeParticipantId(idInput.value)) {
     const err = $("#participantIdError");
     if (err) err.style.display = "block";
-    idInput.focus();
-    return;
+    if (!blocked) idInput.focus();   // le premier bloc en défaut garde le focus
+    blocked = true;
   }
+  if (blocked) return;
 
   const cfg = readConfig();
   if (!cfg.numTrials || cfg.numTrials < 1) {

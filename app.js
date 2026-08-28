@@ -57,6 +57,13 @@ const state = {
 function $(sel) { return document.querySelector(sel); }
 function $all(sel) { return Array.from(document.querySelectorAll(sel)); }
 
+// Câblage tolérant : toutes les pages n'ont pas tous les boutons (la page
+// patient n'a ni écran de configuration ni carte de vérification du SNR).
+function on(sel, ev, fn) {
+  const el = $(sel);
+  if (el) el.addEventListener(ev, fn);
+}
+
 function showScreen(id) {
   $all(".screen").forEach(s => s.classList.remove("active"));
   $(`#${id}`).classList.add("active");
@@ -288,6 +295,7 @@ function onResponse(e) {
   if (!state.pendingIsPractice) {
     const phase = state.phases[state.phaseIdx];
     const record = {
+      participant: state.config.participantId || "anonyme",
       phase: phase.label,
       trial: state.trialIndex + 1,
       snr: state.pendingSnr,
@@ -518,9 +526,20 @@ function exportCsv() {
 
 // ---------------------------------------------------------------- setup screen wiring
 
+// Nettoie l'identifiant saisi : il finit dans le nom du fichier CSV et dans une
+// colonne du CSV, donc on écarte tout ce qui casserait l'un ou l'autre (virgules,
+// guillemets, séparateurs de chemin).
+function sanitizeParticipantId(raw) {
+  return (raw || "")
+    .replace(/[^\p{L}\p{N} _-]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 20);
+}
+
 function readConfig() {
   return {
-    participantId: $("#participantId").value.trim(),
+    participantId: sanitizeParticipantId($("#participantId").value),
     callsign: $("#targetCallsign").value,
     noiseType: $all('input[name="noiseType"]').find(r => r.checked).value,
     numTrials: parseInt($("#numTrials").value, 10),
@@ -529,6 +548,16 @@ function readConfig() {
 }
 
 async function startSession() {
+  // Le champ identifiant n'est obligatoire que sur les pages qui le déclarent
+  // avec l'attribut natif "required" (page patient) — ailleurs, rien ne change.
+  const idInput = $("#participantId");
+  if (idInput && idInput.required && !sanitizeParticipantId(idInput.value)) {
+    const err = $("#participantIdError");
+    if (err) err.style.display = "block";
+    idInput.focus();
+    return;
+  }
+
   const cfg = readConfig();
   if (!cfg.numTrials || cfg.numTrials < 1) {
     alert("Indiquez un nombre d'essais valide.");
@@ -553,15 +582,15 @@ function previewNoise(noiseType) {
 }
 
 function wireSetupScreen() {
-  $("#btnPreviewCorpus").addEventListener("click", () => previewNoise("corpus"));
-  $("#btnPreviewStandard").addEventListener("click", () => previewNoise("standard"));
+  on("#btnPreviewCorpus", "click", () => previewNoise("corpus"));
+  on("#btnPreviewStandard", "click", () => previewNoise("standard"));
 
-  $("#btnStart").addEventListener("click", startSession);
-  $("#btnPlay").addEventListener("click", onPlayClicked);
-  $("#btnReplay").addEventListener("click", replayCurrent);
-  $("#btnStop").addEventListener("click", () => { finishTest(); });
-  $("#btnExport").addEventListener("click", exportCsv);
-  $("#btnRestart").addEventListener("click", () => {
+  on("#btnStart", "click", startSession);
+  on("#btnPlay", "click", onPlayClicked);
+  on("#btnReplay", "click", replayCurrent);
+  on("#btnStop", "click", () => { finishTest(); });
+  on("#btnExport", "click", exportCsv);
+  on("#btnRestart", "click", () => {
     stopNoiseLoop();
     showScreen("screen-setup");
   });
@@ -941,14 +970,14 @@ async function verifOfflineAnalysis() {
   const snrInput = $("#verifSnr");
   if (!snrInput) return;
   snrInput.value = MAIN_SNR;
-  $("#btnVerifNoise").addEventListener("click", () => verifPlay("noise"));
-  $("#btnVerifVoice").addEventListener("click", () => verifPlay("voice"));
-  $("#btnVerifMix").addEventListener("click", () => verifPlay("mix"));
-  $("#btnVerifStop").addEventListener("click", () => verifStopPlayback());
-  $("#btnVerifNewStim").addEventListener("click", () => { verifPickStimulus(); verif.last.voice = null; renderVerifMeasure(); });
-  $("#btnVerifAnalyse").addEventListener("click", () => verifOfflineAnalysis());
-  $("#targetCallsign").addEventListener("change", () => verifPickStimulus());
-  $("#btnStart").addEventListener("click", () => verifStopPlayback());
+  on("#btnVerifNoise", "click", () => verifPlay("noise"));
+  on("#btnVerifVoice", "click", () => verifPlay("voice"));
+  on("#btnVerifMix", "click", () => verifPlay("mix"));
+  on("#btnVerifStop", "click", () => verifStopPlayback());
+  on("#btnVerifNewStim", "click", () => { verifPickStimulus(); verif.last.voice = null; renderVerifMeasure(); });
+  on("#btnVerifAnalyse", "click", () => verifOfflineAnalysis());
+  on("#targetCallsign", "change", () => verifPickStimulus());
+  on("#btnStart", "click", () => verifStopPlayback());
   verifSetPlayingUI(false);
   verifPickStimulus();
 })();

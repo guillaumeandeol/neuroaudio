@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Vega — Test d'audition dans le bruit</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Vega <span class="brand-sub">Test d'audition dans le bruit</span></div>
+  <div id="trialCounter" class="trial-counter"></div>
+</header>
+
+<div class="institution-bar">
+  <div class="institution-logos">
+    <span class="logo-badge" id="logoSSA" title="Service de Santé des Armées">SSA</span>
+    <span class="logo-badge" id="logoIRBA" title="Institut de Recherche Biomédicale des Armées">IRBA</span>
+  </div>
+  <span class="motto">« La connaissance au service des forces »</span>
+</div>
+
+<main id="app">
+
+  <!-- Paramètres figés : invisibles et inaccessibles pour le sujet.
+       Ils sont lus tels quels par readConfig() dans app.js.
+       Pour les modifier, c'est ici et nulle part ailleurs. -->
+  <div hidden id="fixedConfig">
+    <select id="targetCallsign"><option value="Delta">Delta</option></select>
+    <label><input type="radio" name="noiseType" value="corpus"> corpus</label>
+    <label><input type="radio" name="noiseType" value="standard" checked> standard</label>
+    <input type="number" id="numTrials" value="32">
+    <input type="number" id="practiceTrials" value="4">
+  </div>
+
+  <!-- ===================== ÉCRAN 1 : ACCUEIL SUJET ===================== -->
+  <section id="screen-setup" class="screen active">
+    <h1>Avant de commencer</h1>
+
+    <div class="card">
+      <h2>Identification</h2>
+      <label for="participantId">Vos initiales ou votre numéro de participant
+        <input type="text" id="participantId" required maxlength="20"
+               placeholder="ex. GA ou 042"
+               autocomplete="off" autocapitalize="characters" spellcheck="false">
+      </label>
+      <p class="field-error" id="participantIdError">Merci d'indiquer vos initiales ou votre numéro avant de commencer.</p>
+    </div>
+
+    <div class="card">
+      <p class="patient-lead">Vous allez entendre une voix d'homme dans un bruit continu.
+      À chaque essai, elle prononce un <strong>indicatif d'appel</strong>, puis une
+      <strong>couleur</strong> et un <strong>chiffre</strong>.</p>
+
+      <p class="patient-lead" style="margin-bottom:6px">Votre indicatif est :</p>
+      <div class="callsign-badge">DELTA</div>
+
+      <ol class="steps">
+        <li>Mettez le casque et installez-vous au calme.</li>
+        <li>Écoutez la phrase jusqu'au bout, puis touchez la case de la
+            <strong>couleur</strong> entendue portant le <strong>chiffre</strong> entendu.</li>
+        <li>C'est volontairement difficile : le bruit est fort et vous n'entendrez pas tout.
+            <strong>Répondez à chaque essai</strong>, au hasard s'il le faut — ne laissez jamais passer un essai.</li>
+        <li>D'abord 4 essais d'entraînement, qui ne comptent pas. Ensuite le test : 32 essais,
+            environ 5 minutes.</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>Réglage du volume</h2>
+      <p class="hint">Lancez le bruit et réglez le volume de l'appareil à un niveau
+      <strong>fort mais confortable</strong>. Une fois le test commencé, ne touchez plus au volume.</p>
+      <button id="btnVolume" class="btn-secondary" style="display:block;width:100%">▶ Écouter le bruit</button>
+    </div>
+
+    <button id="btnStart" class="btn-primary">Commencer</button>
+
+    <p class="disclaimer">Prototype de recherche — ceci n'est pas un dispositif médical calibré.</p>
+  </section>
+
+  <!-- ===================== ÉCRAN 2 : TEST ===================== -->
+  <section id="screen-test" class="screen">
+    <div class="test-status">
+      <span id="phaseLabel">Entraînement</span>
+      <span id="snrLabel"></span>
+    </div>
+    <div class="live-score" id="liveScore"></div>
+
+    <div class="listen-zone">
+      <button id="btnPlay" class="btn-play">▶ Écouter la phrase</button>
+      <button id="btnReplay" class="btn-secondary" style="display:none">↺ Réécouter (1 fois)</button>
+    </div>
+
+    <p class="instruction">Touchez la couleur et le chiffre entendus après l'indicatif <strong id="callsignReminder"></strong>.</p>
+
+    <div id="grid" class="grid"></div>
+
+    <button id="btnStopPatient" class="btn-link examiner-link">Interrompre le test (examinateur)</button>
+  </section>
+
+  <!-- ===================== ÉCRAN 3 : RÉSULTATS ===================== -->
+  <section id="screen-results" class="screen">
+    <h1>Résultats</h1>
+    <div id="resultsConclusion" class="card"></div>
+    <div id="resultsSummary" class="card"></div>
+    <canvas id="resultsChart" width="600" height="300"></canvas>
+    <div class="results-actions">
+      <button id="btnExport" class="btn-primary">⬇ Exporter en CSV</button>
+      <button id="btnRestart" class="btn-secondary">Nouveau test</button>
+    </div>
+    <table id="resultsTable" class="results-table"></table>
+  </section>
+
+</main>
+
+<script src="audio/manifest.js"></script>
+<script src="app.js"></script>
+<script>
+/* Spécifique à la page patient : réglage du volume, identifiant passé par
+   l'URL (côté examinateur), et confirmation avant d'interrompre le test. */
+(function patientPage() {
+  // patient.html?id=P01 — préremplit le champ quand l'examinateur lance le test
+  // lui-même ; le sujet peut le saisir ou le corriger directement sur la page.
+  const pid = new URLSearchParams(location.search).get("id");
+  if (pid) $("#participantId").value = pid;
+
+  on("#participantId", "input", () => {
+    $("#participantIdError").style.display = "none";
+  });
+
+  let volumeEl = null;
+  function stopVolume() {
+    if (volumeEl) { try { volumeEl.pause(); } catch (e) {} volumeEl = null; }
+    const b = $("#btnVolume");
+    if (b) b.textContent = "▶ Écouter le bruit";
+  }
+  on("#btnVolume", "click", () => {
+    if (volumeEl) { stopVolume(); return; }
+    volumeEl = new Audio(audioUrl(NOISE_FILES.standard));
+    volumeEl.loop = true;
+    volumeEl.play().catch(err => console.error("lecture impossible:", err));
+    $("#btnVolume").textContent = "■ Arrêter le bruit";
+  });
+  on("#btnStart", "click", stopVolume);
+
+  // bouton d'arrêt réservé à l'examinateur : id distinct de #btnStop pour que
+  // app.js ne le câble pas directement, et confirmation avant d'interrompre
+  on("#btnStopPatient", "click", () => {
+    if (confirm("Interrompre le test en cours ?")) finishTest();
+  });
+})();
+</script>
+</body>
+</html>

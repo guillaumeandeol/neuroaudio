@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Vega — CRM autonome (32 phrases embarquées)</title>
+<title>Vega — Audiométrie vocale dans le bruit (CRM) — version autonome (32 phrases)</title>
 <style>
 :root {
   --bg: #0f1420;
@@ -235,6 +235,35 @@ button {
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8em; color: var(--text-dim); }
 .verif-offline-controls { margin-top: 18px; border-top: 1px solid var(--panel-border); padding-top: 14px; }
 
+/* ---------------------------------------------- page patient */
+.patient-lead { font-size: 1rem; line-height: 1.5; margin: 0 0 14px; }
+
+.callsign-badge {
+  display: block;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  color: var(--text);
+  background: #0f1626;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 14px 10px;
+  margin: 0 0 18px;
+}
+
+.steps { margin: 0; padding-left: 20px; }
+.steps li { margin-bottom: 10px; line-height: 1.45; font-size: 0.95rem; }
+.steps li:last-child { margin-bottom: 0; }
+
+.examiner-link { display: block; margin: 24px auto 0; font-size: 0.8rem; opacity: 0.6; }
+.field-error {
+  display: none;
+  color: var(--bad);
+  font-size: 0.85rem;
+  margin: 4px 0 0;
+}
+
 </style>
 </head>
 <body>
@@ -430,6 +459,13 @@ const state = {
 
 function $(sel) { return document.querySelector(sel); }
 function $all(sel) { return Array.from(document.querySelectorAll(sel)); }
+
+// Câblage tolérant : toutes les pages n'ont pas tous les boutons (la page
+// patient n'a ni écran de configuration ni carte de vérification du SNR).
+function on(sel, ev, fn) {
+  const el = $(sel);
+  if (el) el.addEventListener(ev, fn);
+}
 
 function showScreen(id) {
   $all(".screen").forEach(s => s.classList.remove("active"));
@@ -662,6 +698,7 @@ function onResponse(e) {
   if (!state.pendingIsPractice) {
     const phase = state.phases[state.phaseIdx];
     const record = {
+      participant: state.config.participantId || "anonyme",
       phase: phase.label,
       trial: state.trialIndex + 1,
       snr: state.pendingSnr,
@@ -892,9 +929,20 @@ function exportCsv() {
 
 // ---------------------------------------------------------------- setup screen wiring
 
+// Nettoie l'identifiant saisi : il finit dans le nom du fichier CSV et dans une
+// colonne du CSV, donc on écarte tout ce qui casserait l'un ou l'autre (virgules,
+// guillemets, séparateurs de chemin).
+function sanitizeParticipantId(raw) {
+  return (raw || "")
+    .replace(/[^\p{L}\p{N} _-]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 20);
+}
+
 function readConfig() {
   return {
-    participantId: $("#participantId").value.trim(),
+    participantId: sanitizeParticipantId($("#participantId").value),
     callsign: $("#targetCallsign").value,
     noiseType: $all('input[name="noiseType"]').find(r => r.checked).value,
     numTrials: parseInt($("#numTrials").value, 10),
@@ -903,6 +951,16 @@ function readConfig() {
 }
 
 async function startSession() {
+  // Le champ identifiant n'est obligatoire que sur les pages qui le déclarent
+  // avec l'attribut natif "required" (page patient) — ailleurs, rien ne change.
+  const idInput = $("#participantId");
+  if (idInput && idInput.required && !sanitizeParticipantId(idInput.value)) {
+    const err = $("#participantIdError");
+    if (err) err.style.display = "block";
+    idInput.focus();
+    return;
+  }
+
   const cfg = readConfig();
   if (!cfg.numTrials || cfg.numTrials < 1) {
     alert("Indiquez un nombre d'essais valide.");
@@ -927,15 +985,15 @@ function previewNoise(noiseType) {
 }
 
 function wireSetupScreen() {
-  $("#btnPreviewCorpus").addEventListener("click", () => previewNoise("corpus"));
-  $("#btnPreviewStandard").addEventListener("click", () => previewNoise("standard"));
+  on("#btnPreviewCorpus", "click", () => previewNoise("corpus"));
+  on("#btnPreviewStandard", "click", () => previewNoise("standard"));
 
-  $("#btnStart").addEventListener("click", startSession);
-  $("#btnPlay").addEventListener("click", onPlayClicked);
-  $("#btnReplay").addEventListener("click", replayCurrent);
-  $("#btnStop").addEventListener("click", () => { finishTest(); });
-  $("#btnExport").addEventListener("click", exportCsv);
-  $("#btnRestart").addEventListener("click", () => {
+  on("#btnStart", "click", startSession);
+  on("#btnPlay", "click", onPlayClicked);
+  on("#btnReplay", "click", replayCurrent);
+  on("#btnStop", "click", () => { finishTest(); });
+  on("#btnExport", "click", exportCsv);
+  on("#btnRestart", "click", () => {
     stopNoiseLoop();
     showScreen("screen-setup");
   });
@@ -1315,14 +1373,14 @@ async function verifOfflineAnalysis() {
   const snrInput = $("#verifSnr");
   if (!snrInput) return;
   snrInput.value = MAIN_SNR;
-  $("#btnVerifNoise").addEventListener("click", () => verifPlay("noise"));
-  $("#btnVerifVoice").addEventListener("click", () => verifPlay("voice"));
-  $("#btnVerifMix").addEventListener("click", () => verifPlay("mix"));
-  $("#btnVerifStop").addEventListener("click", () => verifStopPlayback());
-  $("#btnVerifNewStim").addEventListener("click", () => { verifPickStimulus(); verif.last.voice = null; renderVerifMeasure(); });
-  $("#btnVerifAnalyse").addEventListener("click", () => verifOfflineAnalysis());
-  $("#targetCallsign").addEventListener("change", () => verifPickStimulus());
-  $("#btnStart").addEventListener("click", () => verifStopPlayback());
+  on("#btnVerifNoise", "click", () => verifPlay("noise"));
+  on("#btnVerifVoice", "click", () => verifPlay("voice"));
+  on("#btnVerifMix", "click", () => verifPlay("mix"));
+  on("#btnVerifStop", "click", () => verifStopPlayback());
+  on("#btnVerifNewStim", "click", () => { verifPickStimulus(); verif.last.voice = null; renderVerifMeasure(); });
+  on("#btnVerifAnalyse", "click", () => verifOfflineAnalysis());
+  on("#targetCallsign", "change", () => verifPickStimulus());
+  on("#btnStart", "click", () => verifStopPlayback());
   verifSetPlayingUI(false);
   verifPickStimulus();
 })();

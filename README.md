@@ -83,6 +83,80 @@ phrases T0 RMS moyen = 2186,1 (constante 2185,6 → +0,002 dB), étendue 2181,7�
 À noter : ce SNR est défini sur le RMS de la phrase entière (silences compris), conformément à la
 normalisation du corpus ; pendant la parole active le rapport est environ **0,7 dB plus favorable**.
 
+## Présentation du bruit : continue ou déclenchée
+
+Deux modes, réglables sur l'écran de configuration (`index.html`) et figés à **déclenché** sur la page
+patient. Le SNR est rigoureusement identique dans les deux cas — seule la fenêtre temporelle du bruit change.
+
+- **Déclenché** (défaut) : le bruit démarre `NOISE_LEAD_MS` (500 ms) avant la phrase, s'arrête
+  `NOISE_TAIL_MS` (500 ms) après, puis `INTER_TRIAL_MS` (1500 ms) de silence avant l'essai suivant.
+  Entrée et sortie en fondu de `NOISE_RAMP_MS` (30 ms) pour éviter les clics. L'extrait de bruit est tiré
+  à un endroit aléatoire du fichier à chaque essai.
+- **Continu** : le bruit tourne d'un bout à l'autre de la phase, comme dans la version initiale.
+
+Chronologie vérifiée en navigateur (enveloppe du gain de bruit échantillonnée toutes les 10 ms) :
+bruit → voix 490–500 ms, fin de voix → coupure du bruit 520 ms, silence inter-essais 1530–1570 ms.
+La réécoute rouvre la même fenêtre (500 + durée de la phrase + 500).
+
+### Le bruit qui « s'arrête »
+
+Trois changements structurels enlèvent les causes plausibles du bruit qui s'interrompt en cours de test :
+
+1. Le bruit est **décodé une fois en AudioBuffer** et bouclé par un `AudioBufferSourceNode`, qui boucle
+   sans trou par construction. La boucle d'un `<audio loop>` peut, elle, laisser un blanc à chaque tour
+   selon le navigateur (padding MP3 non retiré — comportement connu sur WebKit). Repli automatique sur
+   l'élément média si le décodage est impossible (page dossier ouverte en `file://`, où `fetch` est bloqué).
+2. En mode déclenché, la lecture ne dure que ~3 s prise à un offset au plus égal à `durée - 10 s` :
+   **le point de bouclage n'est jamais atteint**, y compris avec le repli élément média.
+3. Les éléments média des phrases sont **explicitement libérés** à la fin de chaque essai
+   (`removeAttribute("src")` + `load()`). Un test de 32 essais en créait autant sans les relâcher, or le
+   nombre d'éléments média simultanés est plafonné sur WebKit/iOS — de quoi faire tomber tout le graphe
+   audio, bruit compris, au milieu d'une passation.
+
+Mesure faite au passage : 35 s de bruit bouclé via `<audio loop>` dans Chromium, échantillonné toutes les
+23 ms, ne montrent **aucun** blanc au point de bouclage. La cause reste donc à confirmer côté Safari.
+
+Chaque ligne du CSV porte désormais `noiseType` et `noisePresentation`, pour que l'export dise dans
+quelles conditions il a été produit.
+
+## Page patient (patient.html)
+
+`patient.html` est la version destinée au sujet : aucun accès au paramétrage. Elle réutilise
+**exactement le même `app.js`** que `index.html` — même déroulé d'essais, même calcul de SNR, même
+écran de résultats — mais son écran d'accueil ne contient que les consignes, un bouton de réglage du
+volume et un bouton « Commencer ».
+
+Réglages figés (bloc `<div hidden id="fixedConfig">` en haut du fichier, seul endroit à modifier) :
+
+| Paramètre | Valeur |
+|---|---|
+| Indicatif cible | Delta |
+| Bruit de masquage | standard (speech-shaped, indépendant du corpus) |
+| SNR | -9 dB |
+| Essais | 32 |
+| Entraînement | 4 |
+
+- **Identifiant participant** : champ visible en haut de l'écran d'accueil (initiales ou numéro), saisi
+  par le sujet lui-même. Obligatoire : `startSession()` refuse de démarrer tant qu'il est vide et affiche
+  un message sous le champ. Le paramètre d'URL `patient.html?id=P01` reste accepté et prérenseigne le
+  champ quand c'est l'examinateur qui lance le test.
+  Le caractère obligatoire tient au seul attribut natif `required` sur le champ : l'enlever le rend
+  facultatif, sans toucher au JavaScript (c'est pourquoi `index.html`, qui ne le porte pas, démarre
+  toujours sans identifiant).
+- **Nettoyage de l'identifiant** : `sanitizeParticipantId()` ne conserve que lettres, chiffres, espaces,
+  `-` et `_`, limité à 20 caractères — l'identifiant part à la fois dans le nom du fichier CSV et dans
+  une colonne du CSV, une virgule ou un `/` y casserait tout. L'identifiant figure désormais dans la
+  colonne `participant` de chaque ligne exportée, et plus seulement dans le nom du fichier.
+- **Fin de test** : le sujet voit l'écran de résultats complet (conclusion clinique, scores, export CSV).
+- **Interruption** : le lien discret en bas de l'écran de test demande confirmation avant d'arrêter.
+  Son id est `btnStopPatient` (et non `btnStop`) pour que `app.js` ne le câble pas directement.
+- Version autonome : `python3 build_standalone.py --page patient.html --callsigns Delta`
+  → `../crm_patient_standalone.html`. Le script refuse de construire si l'indicatif figé dans la page
+  ne fait pas partie des phrases embarquées.
+
+Le câblage des boutons dans `app.js` passe par `on(sel, ev, fn)`, qui ignore silencieusement les
+éléments absents — c'est ce qui permet aux deux pages de partager le même script.
+
 ## Build autonome (crm_standalone.html)
 
 `../build_standalone.py` régénère `../crm_standalone.html` à partir de ce dossier : un fichier HTML unique,

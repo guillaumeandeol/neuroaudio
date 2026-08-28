@@ -6,7 +6,7 @@
 <title>Vegah — Test d'audition dans le bruit</title>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-hide-parameters>
 
 <header class="topbar">
   <div class="brand">Vegah <span class="brand-sub">Test d'audition dans le bruit</span></div>
@@ -108,7 +108,7 @@
 
     <div class="listen-zone">
       <button id="btnPlay" class="btn-play">▶ Écouter la phrase</button>
-      <button id="btnReplay" class="btn-secondary" style="display:none">↺ Réécouter (1 fois)</button>
+      <!-- pas de bouton de réécoute ici : le sujet entend chaque phrase une seule fois -->
     </div>
 
     <p class="instruction">Touchez la couleur et le chiffre entendus après l'indicatif <strong id="callsignReminder"></strong>.</p>
@@ -132,7 +132,7 @@
       <button id="btnExport" class="btn-primary">⬇ Exporter en CSV</button>
       <button id="btnRestart" class="btn-secondary">Nouveau test</button>
     </div>
-    <table id="resultsTable" class="results-table"></table>
+    <div class="table-scroll"><table id="resultsTable" class="results-table"></table></div>
   </section>
 
 </main>

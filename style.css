@@ -150,13 +150,18 @@ button {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  /* minmax(0, 1fr) et non 1fr : sinon la largeur minimale du contenu des
+     boutons impose une grille plus large que l'écran, et la 8e colonne passe
+     hors champ sur téléphone. */
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 20px;
 }
 
 .grid-btn {
   aspect-ratio: 1;
+  padding: 0;        /* annule le padding 13px/20px de la règle button globale */
+  min-width: 0;
   border-radius: 10px;
   color: white;
   font-size: 1.2rem;
@@ -185,9 +190,15 @@ button {
 .results-table th, .results-table td { border-bottom: 1px solid var(--panel-border); padding: 6px 8px; text-align: left; color: var(--text-dim); }
 .results-table th { color: var(--text); position: sticky; top: 48px; background: var(--bg); }
 
+/* Sur tout écran de téléphone, la grille déborde un peu du padding de la page
+   pour gagner en surface tactile, sans toucher aux marges des cartes. Le
+   seuil est large : sans lui, un iPhone Pro Max (430 px) se retrouvait avec
+   des boutons plus petits qu'un iPhone 15 Pro (393 px). */
+@media (max-width: 560px) {
+  .grid { gap: 4px; margin-left: -6px; margin-right: -6px; }
+}
 @media (max-width: 420px) {
-  .grid { gap: 4px; }
-  .grid-btn { font-size: 0.85rem; border-radius: 6px; }
+  .grid-btn { font-size: 0.9rem; border-radius: 6px; }
 }
 
 /* ---------------------------------------------- vérification du SNR */
@@ -323,3 +334,18 @@ button {
   letter-spacing: .04em;
   white-space: nowrap;
 }
+
+/* le graphique et le tableau de résultats ne doivent jamais élargir la page */
+#resultsChart { max-width: 100%; height: auto; }
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 20px;
+}
+.table-scroll .results-table { margin-top: 0; }
+
+/* Page patient : ni le SNR ni le score en cours ne sont montrés au sujet */
+body[data-hide-parameters] #snrLabel,
+body[data-hide-parameters] #liveScore { display: none; }
+body[data-hide-parameters] .test-status { justify-content: center; }

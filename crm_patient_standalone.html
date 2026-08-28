@@ -157,13 +157,18 @@ button {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  /* minmax(0, 1fr) et non 1fr : sinon la largeur minimale du contenu des
+     boutons impose une grille plus large que l'écran, et la 8e colonne passe
+     hors champ sur téléphone. */
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 20px;
 }
 
 .grid-btn {
   aspect-ratio: 1;
+  padding: 0;        /* annule le padding 13px/20px de la règle button globale */
+  min-width: 0;
   border-radius: 10px;
   color: white;
   font-size: 1.2rem;
@@ -192,9 +197,15 @@ button {
 .results-table th, .results-table td { border-bottom: 1px solid var(--panel-border); padding: 6px 8px; text-align: left; color: var(--text-dim); }
 .results-table th { color: var(--text); position: sticky; top: 48px; background: var(--bg); }
 
+/* Sur tout écran de téléphone, la grille déborde un peu du padding de la page
+   pour gagner en surface tactile, sans toucher aux marges des cartes. Le
+   seuil est large : sans lui, un iPhone Pro Max (430 px) se retrouvait avec
+   des boutons plus petits qu'un iPhone 15 Pro (393 px). */
+@media (max-width: 560px) {
+  .grid { gap: 4px; margin-left: -6px; margin-right: -6px; }
+}
 @media (max-width: 420px) {
-  .grid { gap: 4px; }
-  .grid-btn { font-size: 0.85rem; border-radius: 6px; }
+  .grid-btn { font-size: 0.9rem; border-radius: 6px; }
 }
 
 /* ---------------------------------------------- vérification du SNR */
@@ -331,9 +342,24 @@ button {
   white-space: nowrap;
 }
 
+/* le graphique et le tableau de résultats ne doivent jamais élargir la page */
+#resultsChart { max-width: 100%; height: auto; }
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 20px;
+}
+.table-scroll .results-table { margin-top: 0; }
+
+/* Page patient : ni le SNR ni le score en cours ne sont montrés au sujet */
+body[data-hide-parameters] #snrLabel,
+body[data-hide-parameters] #liveScore { display: none; }
+body[data-hide-parameters] .test-status { justify-content: center; }
+
 </style>
 </head>
-<body>
+<body data-hide-parameters>
 
 <header class="topbar">
   <div class="brand">Vegah <span class="brand-sub">Test d'audition dans le bruit</span></div>
@@ -435,7 +461,7 @@ button {
 
     <div class="listen-zone">
       <button id="btnPlay" class="btn-play">▶ Écouter la phrase</button>
-      <button id="btnReplay" class="btn-secondary" style="display:none">↺ Réécouter (1 fois)</button>
+      <!-- pas de bouton de réécoute ici : le sujet entend chaque phrase une seule fois -->
     </div>
 
     <p class="instruction">Touchez la couleur et le chiffre entendus après l'indicatif <strong id="callsignReminder"></strong>.</p>
@@ -459,7 +485,7 @@ button {
       <button id="btnExport" class="btn-primary">⬇ Exporter en CSV</button>
       <button id="btnRestart" class="btn-secondary">Nouveau test</button>
     </div>
-    <table id="resultsTable" class="results-table"></table>
+    <div class="table-scroll"><table id="resultsTable" class="results-table"></table></div>
   </section>
 
 </main>
@@ -547,10 +573,22 @@ const startGuards = [];
 function addStartGuard(fn) { startGuards.push(fn); }
 
 // Câblage tolérant : toutes les pages n'ont pas tous les boutons (la page
-// patient n'a ni écran de configuration ni carte de vérification du SNR).
+// patient n'a ni écran de configuration, ni carte de vérification du SNR, ni
+// bouton de réécoute).
 function on(sel, ev, fn) {
   const el = $(sel);
   if (el) el.addEventListener(ev, fn);
+}
+
+function setDisplay(sel, value) {
+  const el = $(sel);
+  if (el) el.style.display = value;
+}
+
+// Une page peut masquer au sujet les paramètres du test (SNR, score en cours)
+// en posant data-hide-parameters sur <body> : c'est le cas de patient.html.
+function showsParameters() {
+  return !document.body.hasAttribute("data-hide-parameters");
 }
 
 function showScreen(id) {
@@ -776,7 +814,7 @@ function presentSentence(entry, snr, opts) {
     if (!replay) {
       state.trialStartTime = performance.now();
       setGridEnabled(true);
-      if (!state.pendingIsPractice) $("#btnReplay").style.display = "inline-block";
+      if (!state.pendingIsPractice) setDisplay("#btnReplay", "inline-block");
     }
     // filet de sécurité : si l'événement "ended" ne survient jamais (erreur de
     // décodage, onglet en arrière-plan), le bruit ne doit pas rester ouvert.
@@ -794,7 +832,7 @@ function replayCurrent() {
   if (!state.currentTrial || state.replayUsed) return;
   const { entry, snr } = state.currentTrial;
   state.replayUsed = true;
-  $("#btnReplay").style.display = "none";
+  setDisplay("#btnReplay", "none");
   if (isGated()) {
     state.noiseStopAt = null;
     noiseOn(state.config.noiseType).then(() => presentSentence(entry, snr, { replay: true }));
@@ -851,12 +889,14 @@ function updateLiveScore() {
 
 async function nextTrial() {
   state.replayUsed = false;
-  $("#btnReplay").style.display = "none";
+  setDisplay("#btnReplay", "none");
   setGridEnabled(false);
 
   const isPractice = state.practiceRemaining > 0;
   const phase = state.phases[state.phaseIdx];
-  $("#phaseLabel").textContent = isPractice ? "Entraînement" : `${phase.label} (SNR ${phase.snr} dB)`;
+  $("#phaseLabel").textContent = isPractice
+    ? "Entraînement"
+    : (showsParameters() ? `${phase.label} (SNR ${phase.snr} dB)` : phase.label);
 
   const snr = phase.snr;
   if (!isPractice && state.trialIndex >= state.trials.length) { onPhaseComplete(); return; }

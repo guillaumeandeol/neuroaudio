@@ -76,10 +76,22 @@ const startGuards = [];
 function addStartGuard(fn) { startGuards.push(fn); }
 
 // Câblage tolérant : toutes les pages n'ont pas tous les boutons (la page
-// patient n'a ni écran de configuration ni carte de vérification du SNR).
+// patient n'a ni écran de configuration, ni carte de vérification du SNR, ni
+// bouton de réécoute).
 function on(sel, ev, fn) {
   const el = $(sel);
   if (el) el.addEventListener(ev, fn);
+}
+
+function setDisplay(sel, value) {
+  const el = $(sel);
+  if (el) el.style.display = value;
+}
+
+// Une page peut masquer au sujet les paramètres du test (SNR, score en cours)
+// en posant data-hide-parameters sur <body> : c'est le cas de patient.html.
+function showsParameters() {
+  return !document.body.hasAttribute("data-hide-parameters");
 }
 
 function showScreen(id) {
@@ -305,7 +317,7 @@ function presentSentence(entry, snr, opts) {
     if (!replay) {
       state.trialStartTime = performance.now();
       setGridEnabled(true);
-      if (!state.pendingIsPractice) $("#btnReplay").style.display = "inline-block";
+      if (!state.pendingIsPractice) setDisplay("#btnReplay", "inline-block");
     }
     // filet de sécurité : si l'événement "ended" ne survient jamais (erreur de
     // décodage, onglet en arrière-plan), le bruit ne doit pas rester ouvert.
@@ -323,7 +335,7 @@ function replayCurrent() {
   if (!state.currentTrial || state.replayUsed) return;
   const { entry, snr } = state.currentTrial;
   state.replayUsed = true;
-  $("#btnReplay").style.display = "none";
+  setDisplay("#btnReplay", "none");
   if (isGated()) {
     state.noiseStopAt = null;
     noiseOn(state.config.noiseType).then(() => presentSentence(entry, snr, { replay: true }));
@@ -380,12 +392,14 @@ function updateLiveScore() {
 
 async function nextTrial() {
   state.replayUsed = false;
-  $("#btnReplay").style.display = "none";
+  setDisplay("#btnReplay", "none");
   setGridEnabled(false);
 
   const isPractice = state.practiceRemaining > 0;
   const phase = state.phases[state.phaseIdx];
-  $("#phaseLabel").textContent = isPractice ? "Entraînement" : `${phase.label} (SNR ${phase.snr} dB)`;
+  $("#phaseLabel").textContent = isPractice
+    ? "Entraînement"
+    : (showsParameters() ? `${phase.label} (SNR ${phase.snr} dB)` : phase.label);
 
   const snr = phase.snr;
   if (!isPractice && state.trialIndex >= state.trials.length) { onPhaseComplete(); return; }

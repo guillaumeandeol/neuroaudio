@@ -160,6 +160,14 @@ Réglages figés (bloc `<div hidden id="fixedConfig">` en haut du fichier, seul 
   deux, les deux messages s'affichent et le focus va au premier bloc en défaut.
 - **Nouvelle passation** : « Nouveau test » remet l'identifiant à vide et décoche la case, pour que le
   sujet suivant ne parte pas avec l'identifiant et l'acquittement du précédent.
+- **Paramètres masqués pendant le test** : l'attribut `data-hide-parameters` sur `<body>` retire au sujet
+  le SNR (`#snrLabel`, et la mention « (SNR -9 dB) » du libellé de phase) et son score en cours
+  (`#liveScore`). Le compteur d'essais reste, lui, affiché — c'est un repère de progression, pas un
+  paramètre. `index.html` ne porte pas l'attribut et continue de tout afficher.
+- **Pas de réécoute** : le bouton `#btnReplay` est absent du DOM de la page patient — chaque phrase est
+  entendue une seule fois. Les appels d'`app.js` passent par `setDisplay()`, qui ignore les éléments
+  absents. (Le bouton n'apparaissait de toute façon jamais pendant l'entraînement, seulement pendant le
+  test comptabilisé.)
 - **Fin de test** : le sujet voit l'écran de résultats complet (conclusion clinique, scores, export CSV).
 - **Interruption** : le lien discret en bas de l'écran de test demande confirmation avant d'arrêter.
   Son id est `btnStopPatient` (et non `btnStop`) pour que `app.js` ne le câble pas directement.
@@ -190,6 +198,25 @@ audio doit passer par cette fonction, sinon elle cassera le build autonome.
 
 **Relancer ce script après toute modification de `webapp/`** — sinon `crm_standalone.html` se désynchronise
 silencieusement.
+
+## Affichage sur téléphone
+
+La grille de réponse fait 8 colonnes × 4 couleurs, ce qui est le point serré sur un écran de téléphone.
+Trois causes de débordement horizontal ont été corrigées (mesuré : `document.scrollWidth` égal à
+`clientWidth` de 320 px à 1280 px, sur les trois écrans) :
+
+- `grid-template-columns: repeat(8, minmax(0, 1fr))` et non `1fr`. Avec `1fr`, la largeur *minimale du
+  contenu* des boutons impose sa loi : la règle `button` globale leur donnait un `padding: 13px 20px`,
+  soit une grille de 425 px sur un écran de 393 px et une 8ᵉ colonne hors champ. `.grid-btn` remet donc
+  aussi `padding: 0` et `min-width: 0`.
+- `#resultsChart` avait un `width="600"` en dur : `max-width: 100%` le contraint désormais.
+- Le tableau d'essais (16 colonnes, ~800 px) est enveloppé dans `.table-scroll` : il défile
+  horizontalement dans son propre cadre au lieu d'élargir la page entière.
+
+En dessous de 560 px, la grille déborde de 6 px de chaque côté du padding de la page pour gagner en
+surface tactile (les cartes gardent leurs marges). Le seuil est volontairement large : à 420 px, un
+iPhone Pro Max (430 px de large) se retrouvait avec des boutons *plus petits* qu'un iPhone 15 Pro.
+Boutons obtenus : 34 px à 320 px, 43 px à 393 px, 48 px à 430 px, 79 px sur tablette et bureau.
 
 ## Limites du prototype (à garder en tête pour la suite)
 

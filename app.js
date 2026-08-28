@@ -16,6 +16,17 @@ const TARGET_RMS_REF = 2185.6;
 const NOISE_RMS_REF = 2999.6;
 const MAIN_SNR = -9;
 
+// Présentation du bruit.
+// "continu"  : le bruit tourne d'un bout à l'autre de la phase (protocole initial).
+// "declenche": le bruit démarre NOISE_LEAD_MS avant la phrase et s'arrête
+//              NOISE_TAIL_MS après, suivi d'un silence avant l'essai suivant.
+const NOISE_GAIN_REF = 1.0;   // gain de référence du bruit ; le SNR se règle sur la voix
+const NOISE_LEAD_MS = 500;    // bruit avant le début de la phrase
+const NOISE_TAIL_MS = 500;    // bruit après la fin de la phrase
+const NOISE_RAMP_MS = 30;     // fondu d'entrée/sortie du bruit, pour éviter les clics
+const INTER_TRIAL_MS = 1500;  // silence entre la fin du bruit et l'essai suivant
+const DEFAULT_NOISE_PRESENTATION = "declenche";
+
 // Clinical classification thresholds, calibrated for a 32-trial main test.
 const NUM_TRIALS_FOR_CLASSIFICATION = 32;
 const NORMAL_MIN_CORRECT = 19;   // >= this many correct (out of 32) => normal
@@ -36,9 +47,9 @@ const state = {
   practiceRemaining: 0,
   audioCtx: null,
   audioUnlocked: false,
-  noiseEl: null,
-  noiseNode: null,
-  noiseGain: null,
+  noise: null,             // chaîne audio du bruit (voir ensureNoiseChain)
+  noiseStopAt: null,       // horodatage (performance.now) de la fin du bruit de l'essai
+  presentationSerial: 0,   // jeton de présentation, pour ignorer les minuteries en retard
   masterGain: null,
   currentTrial: null,
   trialStartTime: null,
@@ -119,31 +130,97 @@ async function ensureAudioCtx() {
   if (state.audioCtx.state === "suspended") await state.audioCtx.resume();
 }
 
-async function startNoiseLoop(noiseType) {
-  if (state.noiseNode) return; // already running
-  const file = NOISE_FILES[noiseType] || NOISE_FILES.corpus;
-  const el = new Audio(audioUrl(file));
-  el.loop = true;
-  el.crossOrigin = "anonymous";
-  const src = state.audioCtx.createMediaElementSource(el);
-  const g = state.audioCtx.createGain();
-  g.gain.value = 1.0; // reference level, corresponds to NOISE_RMS_REF
-  src.connect(g).connect(state.masterGain);
-  await el.play();
-  state.noiseEl = el;
-  state.noiseNode = src;
-  state.noiseGain = g;
+// Le bruit est décodé une fois en AudioBuffer quand c'est possible. Un
+// <audio loop> laisse un trou audible à chaque tour de boucle (padding ajouté
+// par l'encodeur MP3) : c'est ce qui s'entendait comme un bruit qui « s'arrête »
+// à intervalle régulier. Un AudioBufferSourceNode boucle sans trou. En file://
+// le décodage est impossible (fetch bloqué) et on retombe sur l'élément média.
+async function ensureNoiseChain(noiseType) {
+  if (state.noise && state.noise.type === noiseType) return state.noise;
+  stopNoiseLoop();
+
+  const ctx = state.audioCtx;
+  const gain = ctx.createGain();
+  gain.gain.value = 0;
+  gain.connect(state.masterGain);
+  const chain = { type: noiseType, gain, buffer: null, el: null, src: null, node: null, running: false };
+
+  try {
+    chain.buffer = await verifDecode(audioUrl(NOISE_FILES[noiseType] || NOISE_FILES.corpus));
+  } catch (e) {
+    const el = new Audio(audioUrl(NOISE_FILES[noiseType] || NOISE_FILES.corpus));
+    el.crossOrigin = "anonymous";
+    el.loop = true;
+    chain.src = ctx.createMediaElementSource(el);
+    chain.src.connect(gain);
+    chain.el = el;
+  }
+  state.noise = chain;
+  return chain;
+}
+
+function noiseDuration(chain) {
+  if (chain.buffer) return chain.buffer.duration;
+  return Number.isFinite(chain.el && chain.el.duration) ? chain.el.duration : 30;
+}
+
+function noiseRampTo(chain, target) {
+  const t = state.audioCtx.currentTime;
+  const g = chain.gain.gain;
+  g.cancelScheduledValues(t);
+  g.setValueAtTime(g.value, t);
+  g.linearRampToValueAtTime(target, t + NOISE_RAMP_MS / 1000);
+}
+
+// Démarre la lecture du bruit à un endroit tiré au hasard du fichier, pour que
+// tous les essais n'entendent pas exactement le même extrait.
+function noiseSourceStart(chain) {
+  const usable = Math.max(0, noiseDuration(chain) - 10);
+  const offset = Math.random() * usable;
+  if (chain.buffer) {
+    const node = state.audioCtx.createBufferSource();
+    node.buffer = chain.buffer;
+    node.loop = true;
+    node.connect(chain.gain);
+    node.start(state.audioCtx.currentTime, offset);
+    return node;
+  }
+  try { chain.el.currentTime = offset; } catch (e) {}
+  chain.el.play().catch(err => console.error("lecture du bruit impossible:", err));
+  return null;
+}
+
+async function noiseOn(noiseType) {
+  const chain = await ensureNoiseChain(noiseType);
+  if (chain.running) return chain;
+  chain.node = noiseSourceStart(chain);
+  noiseRampTo(chain, NOISE_GAIN_REF);
+  chain.running = true;
+  return chain;
+}
+
+// Coupe le bruit en fondu. Renvoie l'horodatage auquel le silence est effectif.
+function noiseOff() {
+  const chain = state.noise;
+  if (!chain || !chain.running) return performance.now();
+  noiseRampTo(chain, 0);
+  const node = chain.node;
+  chain.node = null;
+  chain.running = false;
+  if (node) { try { node.stop(state.audioCtx.currentTime + NOISE_RAMP_MS / 1000 + 0.02); } catch (e) {} }
+  else if (chain.el) setTimeout(() => { try { chain.el.pause(); } catch (e) {} }, NOISE_RAMP_MS + 20);
+  return performance.now() + NOISE_RAMP_MS;
 }
 
 function stopNoiseLoop() {
-  if (state.noiseNode) {
-    try { state.noiseEl.pause(); } catch (e) {}
-    state.noiseNode.disconnect();
-    state.noiseGain.disconnect();
-    state.noiseEl = null;
-    state.noiseNode = null;
-    state.noiseGain = null;
-  }
+  const chain = state.noise;
+  if (!chain) return;
+  try { if (chain.node) chain.node.stop(); } catch (e) {}
+  try { if (chain.el) chain.el.pause(); } catch (e) {}
+  try { if (chain.src) chain.src.disconnect(); } catch (e) {}
+  try { chain.gain.disconnect(); } catch (e) {}
+  state.noise = null;
+  state.noiseStopAt = null;
 }
 
 // ---------------------------------------------------------------- trial generation
@@ -160,34 +237,103 @@ function pickStimulus(callsign) {
 // ---------------------------------------------------------------- playback of a trial
 
 function trialGain(snr) {
-  return (NOISE_RMS_REF * state.noiseGain.gain.value / TARGET_RMS_REF) * dbToGain(snr);
+  // On part du gain de référence du bruit et non de la valeur courante du
+  // GainNode : en présentation déclenchée, celle-ci passe par 0 entre les essais.
+  return (NOISE_RMS_REF * NOISE_GAIN_REF / TARGET_RMS_REF) * dbToGain(snr);
 }
 
-function playFile(relFile, gainValue) {
+function prepareFile(relFile, gainValue) {
   const el = new Audio(audioUrl(relFile));
   el.crossOrigin = "anonymous";
   const src = state.audioCtx.createMediaElementSource(el);
   const g = state.audioCtx.createGain();
   g.gain.value = gainValue;
   src.connect(g).connect(state.masterGain);
-  el.addEventListener("ended", () => { src.disconnect(); g.disconnect(); });
-  el.play().catch(err => console.error("lecture audio impossible:", err));
+  el.addEventListener("ended", () => {
+    src.disconnect();
+    g.disconnect();
+    // Libération explicite de l'élément média : un test de 32 essais en créait
+    // autant sans jamais les relâcher, et le nombre d'éléments média simultanés
+    // est plafonné sur WebKit/iOS — de quoi faire tomber tout le graphe audio,
+    // bruit compris, en cours de test.
+    try { el.pause(); el.removeAttribute("src"); el.load(); } catch (e) {}
+  });
   return { el, src, gainNode: g };
 }
 
-async function playTrial(snr) {
-  const entry = pickStimulus(state.config.callsign);
-  const playback = playFile(entry.file, trialGain(snr));
-  state.currentTrial = { entry, snr, ...playback };
-  return entry;
+function playFile(relFile, gainValue) {
+  const playback = prepareFile(relFile, gainValue);
+  playback.el.play().catch(err => console.error("lecture audio impossible:", err));
+  return playback;
+}
+
+function isGated() {
+  return state.config.noisePresentation === "declenche";
+}
+
+// Présente une phrase. En présentation déclenchée, la lecture est retardée de
+// NOISE_LEAD_MS (le bruit a déjà démarré) et le bruit est coupé NOISE_TAIL_MS
+// après la fin de la phrase.
+function presentSentence(entry, snr, opts) {
+  const gated = isGated();
+  const replay = !!(opts && opts.replay);
+  const playback = prepareFile(entry.file, trialGain(snr));
+  // Jeton de présentation : les minuteries armées ici (fin de phrase, filet de
+  // sécurité) ne doivent jamais couper le bruit d'une présentation suivante si
+  // elles se déclenchent en retard — essai suivant comme réécoute.
+  state.presentationSerial = (state.presentationSerial || 0) + 1;
+  const serial = state.presentationSerial;
+
+  const closeGate = () => {
+    if (!gated || serial !== state.presentationSerial || state.noiseStopAt !== null) return;
+    state.noiseStopAt = noiseOff();
+  };
+
+  playback.el.addEventListener("ended", () => {
+    if (gated) setTimeout(closeGate, NOISE_TAIL_MS);
+  });
+
+  const startNow = () => {
+    playback.el.play().catch(err => console.error("lecture audio impossible:", err));
+    if (!replay) {
+      state.trialStartTime = performance.now();
+      setGridEnabled(true);
+      if (!state.pendingIsPractice) $("#btnReplay").style.display = "inline-block";
+    }
+    // filet de sécurité : si l'événement "ended" ne survient jamais (erreur de
+    // décodage, onglet en arrière-plan), le bruit ne doit pas rester ouvert.
+    const dur = Number.isFinite(playback.el.duration) ? playback.el.duration : 3;
+    setTimeout(closeGate, dur * 1000 + NOISE_TAIL_MS + 2000);
+  };
+
+  if (gated) setTimeout(startNow, NOISE_LEAD_MS);
+  else startNow();
+
+  return playback;
 }
 
 function replayCurrent() {
   if (!state.currentTrial || state.replayUsed) return;
   const { entry, snr } = state.currentTrial;
-  playFile(entry.file, trialGain(snr));
   state.replayUsed = true;
   $("#btnReplay").style.display = "none";
+  if (isGated()) {
+    state.noiseStopAt = null;
+    noiseOn(state.config.noiseType).then(() => presentSentence(entry, snr, { replay: true }));
+  } else {
+    playFile(entry.file, trialGain(snr));
+  }
+}
+
+// Enchaînement vers l'essai suivant : en présentation déclenchée, on attend que
+// le bruit se soit tu, puis on laisse INTER_TRIAL_MS de silence.
+function afterTrial(fn) {
+  if (!isGated()) { setTimeout(fn, 1000); return; }
+  const tick = () => {
+    if (state.noiseStopAt !== null && performance.now() >= state.noiseStopAt) setTimeout(fn, INTER_TRIAL_MS);
+    else setTimeout(tick, 50);
+  };
+  tick();
 }
 
 // ---------------------------------------------------------------- grid UI
@@ -262,11 +408,12 @@ async function nextTrial() {
 
 async function playCurrentTrial() {
   await ensureAudioCtx();
-  await startNoiseLoop(state.config.noiseType);
-  const entry = await playTrial(state.pendingSnr);
-  state.trialStartTime = performance.now();
-  setGridEnabled(true);
-  if (!state.pendingIsPractice) $("#btnReplay").style.display = "inline-block";
+  const entry = pickStimulus(state.config.callsign);
+  const snr = state.pendingSnr;
+  state.noiseStopAt = null;
+  await noiseOn(state.config.noiseType);
+  const playback = presentSentence(entry, snr, { replay: false });
+  state.currentTrial = { entry, snr, ...playback };
   return entry;
 }
 
@@ -297,6 +444,8 @@ function onResponse(e) {
     const record = {
       participant: state.config.participantId || "anonyme",
       phase: phase.label,
+      noiseType: state.config.noiseType,
+      noisePresentation: state.config.noisePresentation,
       trial: state.trialIndex + 1,
       snr: state.pendingSnr,
       talker: entry.talker,
@@ -316,11 +465,11 @@ function onResponse(e) {
   }
   updateLiveScore();
 
-  setTimeout(() => {
+  afterTrial(() => {
     const finished = state.pendingIsPractice ? false : state.trialIndex >= state.trials.length;
     if (finished) onPhaseComplete();
     else nextTrial();
-  }, 1000);
+  });
 }
 
 // ---------------------------------------------------------------- phase / classification logic
@@ -542,6 +691,8 @@ function readConfig() {
     participantId: sanitizeParticipantId($("#participantId").value),
     callsign: $("#targetCallsign").value,
     noiseType: $all('input[name="noiseType"]').find(r => r.checked).value,
+    noisePresentation: (($all('input[name="noisePresentation"]').find(r => r.checked) || {}).value)
+                       || DEFAULT_NOISE_PRESENTATION,
     numTrials: parseInt($("#numTrials").value, 10),
     practiceTrials: parseInt($("#practiceTrials").value, 10),
   };

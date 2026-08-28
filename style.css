@@ -256,3 +256,13 @@ button {
   font-size: 0.85rem;
   margin: 4px 0 0;
 }
+
+.subhead {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-dim);
+  margin: 18px 0 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--panel-border);
+}

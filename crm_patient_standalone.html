@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Vega — Test d'audition dans le bruit — version autonome (32 phrases)</title>
+<title>Vegah — Test d'audition dans le bruit — version autonome (32 phrases)</title>
 <style>
 :root {
   --bg: #0f1420;
@@ -15,6 +15,7 @@
   --accent-dark: #2f5fce;
   --ok: #34c77b;
   --bad: #ff5c6c;
+  --warn: #f0b429;
 
   --c-bleu: #2f6fed;
   --c-jaune: #e8c33a;
@@ -274,12 +275,68 @@ button {
   border-top: 1px solid var(--panel-border);
 }
 
+/* ---------------------------------------------- message de vigilance */
+.vigilance {
+  background: rgba(240, 180, 41, 0.08);
+  border: 1px solid rgba(240, 180, 41, 0.45);
+  border-left: 4px solid var(--warn);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.vigilance p { margin: 0 0 8px; font-size: 0.9rem; line-height: 1.45; }
+.vigilance p:last-child { margin-bottom: 0; }
+.vigilance-title {
+  color: var(--warn);
+  font-weight: 700;
+  font-size: 0.95rem !important;
+}
+.vigilance-title::before { content: "⚠ "; }
+
+.vigilance .ack {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(240, 180, 41, 0.3);
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.vigilance .ack input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--warn);
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+.vigilance .field-error { margin-top: 8px; }
+
+.gsp-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 5px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  background: rgba(79, 140, 255, 0.10);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+
 </style>
 </head>
 <body>
 
 <header class="topbar">
-  <div class="brand">Vega <span class="brand-sub">Test d'audition dans le bruit</span></div>
+  <div class="brand">Vegah <span class="brand-sub">Test d'audition dans le bruit</span></div>
   <div id="trialCounter" class="trial-counter"></div>
 </header>
 
@@ -289,6 +346,7 @@ button {
     <span class="logo-badge" id="logoIRBA" title="Institut de Recherche Biomédicale des Armées">IRBA</span>
   </div>
   <span class="motto">« La connaissance au service des forces »</span>
+  <span class="gsp-badge">GSP Bruit</span>
 </div>
 
 <main id="app">
@@ -309,6 +367,22 @@ button {
   <!-- ===================== ÉCRAN 1 : ACCUEIL SUJET ===================== -->
   <section id="screen-setup" class="screen active">
     <h1>Avant de commencer</h1>
+
+    <div class="vigilance" role="note">
+      <p class="vigilance-title">Version en cours de développement</p>
+      <p>Ce test est un <strong>prototype de recherche</strong>, encore en cours de mise au point.
+      Ce n'est pas un examen médical : les résultats affichés à la fin ne constituent
+      <strong>ni un diagnostic, ni une évaluation de votre audition</strong>, et ne doivent pas être
+      interprétés comme tels.</p>
+      <p>Si vous ressentez une gêne auditive, parlez-en à un médecin ou à un service d'audiologie.</p>
+
+      <label class="ack" for="ackDev">
+        <input type="checkbox" id="ackDev">
+        <span>J'ai lu et compris qu'il s'agit d'une version en cours de développement, dont les
+        résultats n'ont pas de valeur diagnostique.</span>
+      </label>
+      <p class="field-error" id="ackDevError">Merci de cocher cette case avant de commencer.</p>
+    </div>
 
     <div class="card">
       <h2>Identification</h2>
@@ -374,6 +448,10 @@ button {
   <!-- ===================== ÉCRAN 3 : RÉSULTATS ===================== -->
   <section id="screen-results" class="screen">
     <h1>Résultats</h1>
+    <div class="vigilance" role="note">
+      <p>Résultats obtenus avec une <strong>version en cours de développement</strong> : ils n'ont
+      aucune valeur diagnostique et ne remplacent pas un bilan auditif réalisé par un professionnel.</p>
+    </div>
     <div id="resultsConclusion" class="card"></div>
     <div id="resultsSummary" class="card"></div>
     <canvas id="resultsChart" width="600" height="300"></canvas>
@@ -391,7 +469,7 @@ window.EMBEDDED_AUDIO = {"noise/corpus_ssn.mp3": "data:audio/mpeg;base64,SUQzBAA
 window.CRM_MANIFEST = [{"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Bleu", "number": 1, "file": "T0/T0_M_Delta_Bleu_1.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Bleu", "number": 2, "file": "T0/T0_M_Delta_Bleu_2.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Bleu", "number": 3, "file": "T0/T0_M_Delta_Bleu_3.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Bleu", "number": 4, "file": "T0/T0_M_Delta_Bleu_4.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Bleu", "number": 5, "file": "T0/T0_M_Delta_Bleu_5.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Bleu", "number": 6, "file": "T0/T0_M_Delta_Bleu_6.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Bleu", "number": 7, "file": "T0/T0_M_Delta_Bleu_7.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Bleu", "number": 8, "file": "T0/T0_M_Delta_Bleu_8.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Jaune", "number": 1, "file": "T0/T0_M_Delta_Jaune_1.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Jaune", "number": 2, "file": "T0/T0_M_Delta_Jaune_2.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Jaune", "number": 3, "file": "T0/T0_M_Delta_Jaune_3.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Jaune", "number": 4, "file": "T0/T0_M_Delta_Jaune_4.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Jaune", "number": 5, "file": "T0/T0_M_Delta_Jaune_5.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Jaune", "number": 6, "file": "T0/T0_M_Delta_Jaune_6.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Jaune", "number": 7, "file": "T0/T0_M_Delta_Jaune_7.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Jaune", "number": 8, "file": "T0/T0_M_Delta_Jaune_8.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Rouge", "number": 1, "file": "T0/T0_M_Delta_Rouge_1.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Rouge", "number": 2, "file": "T0/T0_M_Delta_Rouge_2.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Rouge", "number": 3, "file": "T0/T0_M_Delta_Rouge_3.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Rouge", "number": 4, "file": "T0/T0_M_Delta_Rouge_4.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Rouge", "number": 5, "file": "T0/T0_M_Delta_Rouge_5.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Rouge", "number": 6, "file": "T0/T0_M_Delta_Rouge_6.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Rouge", "number": 7, "file": "T0/T0_M_Delta_Rouge_7.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Rouge", "number": 8, "file": "T0/T0_M_Delta_Rouge_8.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Vert", "number": 1, "file": "T0/T0_M_Delta_Vert_1.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Vert", "number": 2, "file": "T0/T0_M_Delta_Vert_2.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Vert", "number": 3, "file": "T0/T0_M_Delta_Vert_3.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Vert", "number": 4, "file": "T0/T0_M_Delta_Vert_4.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Vert", "number": 5, "file": "T0/T0_M_Delta_Vert_5.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Vert", "number": 6, "file": "T0/T0_M_Delta_Vert_6.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Vert", "number": 7, "file": "T0/T0_M_Delta_Vert_7.mp3"}, {"talker": "T0", "sex": "M", "callsign": "Delta", "color": "Vert", "number": 8, "file": "T0/T0_M_Delta_Vert_8.mp3"}];
 </script>
 <script>
-/* Vega — CRM (Coordinate Response Measure) speech-in-noise test
+/* Vegah — CRM (Coordinate Response Measure) speech-in-noise test
    Prototype web app. Based on:
    Isnard, Chastres & Andéol (2024), "French version of the coordinate
    response measure corpus and its validation on a speech-on-speech task",
@@ -460,6 +538,13 @@ const state = {
 
 function $(sel) { return document.querySelector(sel); }
 function $all(sel) { return Array.from(document.querySelectorAll(sel)); }
+
+// Verrous de démarrage : une page peut refuser le lancement du test en
+// enregistrant ici une fonction qui renvoie false pour bloquer (à charge pour
+// elle d'afficher son propre message). Permet à patient.html d'ajouter ses
+// conditions sans que app.js ait à les connaître.
+const startGuards = [];
+function addStartGuard(fn) { startGuards.push(fn); }
 
 // Câblage tolérant : toutes les pages n'ont pas tous les boutons (la page
 // patient n'a ni écran de configuration ni carte de vérification du SNR).
@@ -1092,15 +1177,19 @@ function readConfig() {
 }
 
 async function startSession() {
+  let blocked = false;
+  for (const guard of startGuards) if (guard() === false) blocked = true;
+
   // Le champ identifiant n'est obligatoire que sur les pages qui le déclarent
   // avec l'attribut natif "required" (page patient) — ailleurs, rien ne change.
   const idInput = $("#participantId");
   if (idInput && idInput.required && !sanitizeParticipantId(idInput.value)) {
     const err = $("#participantIdError");
     if (err) err.style.display = "block";
-    idInput.focus();
-    return;
+    if (!blocked) idInput.focus();   // le premier bloc en défaut garde le focus
+    blocked = true;
   }
+  if (blocked) return;
 
   const cfg = readConfig();
   if (!cfg.numTrials || cfg.numTrials < 1) {
@@ -1538,6 +1627,27 @@ async function verifOfflineAnalysis() {
 
   on("#participantId", "input", () => {
     $("#participantIdError").style.display = "none";
+  });
+
+  // Le test ne démarre pas tant que le message de vigilance n'est pas acquitté.
+  addStartGuard(() => {
+    const box = $("#ackDev");
+    if (box.checked) return true;
+    $("#ackDevError").style.display = "block";
+    box.focus();
+    return false;
+  });
+  on("#ackDev", "change", () => {
+    if ($("#ackDev").checked) $("#ackDevError").style.display = "none";
+  });
+
+  // Nouvelle passation : on repart d'une page vierge pour le sujet suivant,
+  // sans son identifiant ni l'acquittement du précédent.
+  on("#btnRestart", "click", () => {
+    $("#participantId").value = "";
+    $("#ackDev").checked = false;
+    $("#participantIdError").style.display = "none";
+    $("#ackDevError").style.display = "none";
   });
 
   let volumeEl = null;

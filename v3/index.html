@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Vegah v3 — Version avec SNR décroissant en entraînement — version autonome (32 phrases)</title>
+<title>Vegah v3 — Version avec niveau de bruit relatif croissant en entraînement — version autonome (32 phrases)</title>
 <style>
 :root {
   --bg: #0f1420;
@@ -405,12 +405,133 @@ body[data-hide-parameters] .test-status { justify-content: center; }
 .field-row { display: flex; flex-wrap: wrap; gap: 16px; }
 .field-row label { flex: 1 1 180px; }
 
+/* ------------------------------------- annonce de passage entraînement → mesure */
+.phase-gate {
+  max-width: 520px;
+  margin: 26px auto;
+  padding: 26px 24px 24px;
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  background: rgba(74, 125, 255, 0.08);
+  text-align: center;
+}
+.phase-gate h2 { margin: 0 0 12px; }
+.phase-gate p { margin: 0 0 18px; line-height: 1.55; }
+.phase-gate-kicker {
+  margin: 0 0 6px !important;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Déroulement en deux temps, sur l'écran d'accueil du sujet. */
+ol.phases { list-style: none; margin: 0; padding: 0; }
+ol.phases li {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 0;
+  line-height: 1.55;
+}
+ol.phases li + li { border-top: 1px solid var(--line, rgba(255,255,255,0.12)); }
+.phase-num {
+  flex: 0 0 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ------------------------------------- bilan de l'entraînement, dans l'écran d'annonce */
+.gate-feedback {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line, rgba(255,255,255,0.14));
+  background: rgba(255, 255, 255, 0.03);
+  text-align: center;
+}
+/* Classes de ton préfixées : .ok / .bad sont déjà des classes globales de
+   couleur (carte « Vérification du SNR ») et teindraient tout le bloc. */
+.gate-feedback.gf-ok   { border-color: #3ea16b; background: rgba(62, 161, 107, 0.10); }
+.gate-feedback.gf-warn { border-color: #d9a03a; background: rgba(217, 160, 58, 0.10); }
+.gate-feedback.gf-bad  { border-color: #d9603a; background: rgba(217, 96, 58, 0.10); }
+.gf-title { margin: 0 0 4px !important; font-weight: 700; font-size: 1rem; }
+.gate-feedback.gf-ok   .gf-title { color: #6fd09b; }
+.gate-feedback.gf-warn .gf-title { color: #edc274; }
+.gate-feedback.gf-bad  .gf-title { color: #f0906f; }
+/* Le corps du bilan reste dans la couleur de texte normale : un pavé entier en
+   rouge se lit comme une alarme, alors que le message dit « vérifiez le casque ». */
+.gf-score, .gf-text { color: var(--text); }
+.gf-score { margin: 0 0 10px !important; font-size: 0.95rem; }
+.gf-marks { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.gf-mark {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-style: normal; font-size: 0.78rem; font-weight: 700;
+}
+.gf-mark.hit  { background: rgba(62, 161, 107, 0.22); color: #6fd09b; }
+.gf-mark.miss { background: rgba(255, 255, 255, 0.07); color: var(--text-dim); }
+.gf-text { margin: 0 !important; font-size: 0.92rem; line-height: 1.5; }
+.gf-note { margin: 8px 0 0 !important; font-size: 0.8rem; color: var(--text-dim); line-height: 1.45; }
+#btnPhaseGateRedo { margin-top: 10px; width: 100%; }
+
+/* ------------------------------------- zone de normalité, écran de résultats */
+.norm-scale {
+  position: relative;
+  display: flex;
+  height: 22px;
+  border-radius: 6px;
+  overflow: visible;
+  margin: 18px 0 34px;
+}
+.norm-band { height: 100%; }
+.norm-band:first-child { border-radius: 6px 0 0 6px; }
+.norm-band:nth-child(3) { border-radius: 0 6px 6px 0; }
+.norm-bad  { background: rgba(217, 96, 58, 0.55); }
+.norm-mid  { background: rgba(217, 160, 58, 0.45); }
+.norm-good { background: rgba(62, 161, 107, 0.55); }
+.norm-marker {
+  position: absolute;
+  top: -6px;
+  width: 3px;
+  height: 34px;
+  background: var(--text);
+  transform: translateX(-1.5px);
+}
+.norm-marker span {
+  position: absolute;
+  top: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.norm-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+.norm-legend span { display: flex; align-items: center; gap: 6px; }
+.norm-key { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.norm-verdict { margin: 12px 0 0; }
+
 </style>
 </head>
 <body>
 
 <header class="topbar">
-  <div class="brand">Vegah <span class="version-badge" title="Version avec SNR décroissant en entraînement">v3</span> <span class="brand-sub">CRM — audiométrie vocale dans le bruit</span></div>
+  <div class="brand">Vegah <span class="version-badge" title="Version avec niveau de bruit relatif croissant en entraînement">v3</span> <span class="brand-sub">CRM — audiométrie vocale dans le bruit</span></div>
   <div id="trialCounter" class="trial-counter"></div>
 </header>
 
@@ -428,7 +549,7 @@ body[data-hide-parameters] .test-status { justify-content: center; }
   <!-- ===================== ÉCRAN 1 : ACCUEIL / CONFIGURATION ===================== -->
   <section id="screen-setup" class="screen active">
     <h1>Configuration du test</h1>
-    <p class="version-line">Version avec SNR décroissant en entraînement</p>
+    <p class="version-line">Version avec niveau de bruit relatif croissant en entraînement</p>
 
     <div class="card">
       <label>Identifiant participant (optionnel)
@@ -531,6 +652,10 @@ body[data-hide-parameters] .test-status { justify-content: center; }
     <div class="practice-meter" id="practiceMeter" style="display:none"></div>
     <div class="live-score" id="liveScore"></div>
 
+    <!-- Pas d'écran d'annonce entraînement → mesure ici : il est destiné au
+         sujet (voir patient.html). Sans #phaseGate, showPhaseGate() renvoie
+         false et app.js enchaîne directement sur le premier essai compté. -->
+
     <div class="listen-zone">
       <button id="btnPlay" class="btn-play">▶ Écouter la phrase</button>
       <button id="btnReplay" class="btn-secondary" style="display:none">↺ Réécouter (1 fois)</button>
@@ -546,8 +671,9 @@ body[data-hide-parameters] .test-status { justify-content: center; }
   <!-- ===================== ÉCRAN 3 : RÉSULTATS ===================== -->
   <section id="screen-results" class="screen">
     <h1>Résultats</h1>
-    <p class="version-line">Version avec SNR décroissant en entraînement</p>
+    <p class="version-line">Version avec niveau de bruit relatif croissant en entraînement</p>
     <div id="resultsConclusion" class="card"></div>
+    <div id="resultsNormality" class="card"></div>
     <div id="resultsSummary" class="card"></div>
     <canvas id="resultsChart" width="600" height="300"></canvas>
     <div class="results-actions">
@@ -590,6 +716,11 @@ const MAIN_SNR = -9;
 const PRACTICE_SNR_START = 6;        // SNR du premier essai d'entraînement (dB)
 const PRACTICE_SNR_END = MAIN_SNR;   // SNR du dernier essai d'entraînement (dB)
 const PRACTICE_TRIALS_DEFAULT = 6;   // nombre d'essais d'entraînement par défaut
+// Bilan de l'entraînement : nombre d'erreurs tolérées sur les paliers peu
+// bruités avant de considérer que la tâche n'a pas été comprise. Valeur à
+// recaler sur des sujets réels.
+const PRACTICE_EASY_TOLERANCE = 1;
+const PRACTICE_EASY_TOLERANCE_MIN_TRIALS = 3;  // en dessous, aucune erreur tolérée
 
 // Présentation du bruit.
 // "continu"  : le bruit tourne d'un bout à l'autre de la phase (protocole initial).
@@ -622,6 +753,9 @@ const state = {
   practiceRemaining: 0,
   practiceTotal: 0,
   practiceSnrs: [],       // échelle de SNR de l'entraînement, un par essai
+  gatePassed: false,      // l'annonce « la mesure commence » a été validée
+  practiceResults: [],    // {snr, correctBoth} de chaque essai d'entraînement
+  practiceRetried: false, // l'entraînement a déjà été refait une fois
   audioCtx: null,
   audioUnlocked: false,
   noise: null,             // chaîne audio du bruit (voir ensureNoiseChain)
@@ -678,6 +812,14 @@ function numFromInput(sel, fallback) {
 // en posant data-hide-parameters sur <body> : c'est le cas de patient.html.
 function showsParameters() {
   return !document.body.hasAttribute("data-hide-parameters");
+}
+
+// Nom de phase montré au sujet. « Test principal » et « Confirmation » sont le
+// vocabulaire de l'examinateur ; le sujet, lui, a besoin de savoir une seule
+// chose : ce qu'il fait maintenant est mesuré.
+const PATIENT_PHASE_LABELS = { main: "Mesure en cours", c12: "Mesure complémentaire", c6: "Mesure complémentaire" };
+function phaseLabelFor(phase) {
+  return showsParameters() ? phase.label : (PATIENT_PHASE_LABELS[phase.key] || phase.label);
 }
 
 function showScreen(id) {
@@ -1019,9 +1161,15 @@ async function nextTrial() {
   const laddered = isPractice ? state.practiceSnrs[practiceStep] : undefined;
   const snr = (laddered === undefined) ? phase.snr : laddered;
 
+  // Fin de l'entraînement : on annonce la mesure et on attend le sujet.
+  if (!isPractice && state.practiceTotal > 0 && state.trialIndex === 0 && !state.gatePassed) {
+    if (showPhaseGate()) return;
+    state.gatePassed = true;   // page sans écran d'annonce : on enchaîne comme avant
+  }
+
   $("#phaseLabel").textContent = isPractice
-    ? (showsParameters() ? `Entraînement (SNR ${snr.toFixed(1)} dB)` : "Entraînement")
-    : (showsParameters() ? `${phase.label} (SNR ${phase.snr} dB)` : phase.label);
+    ? (showsParameters() ? `Entraînement (SNR ${snr.toFixed(1)} dB)` : "Entraînement — ne compte pas")
+    : (showsParameters() ? `${phaseLabelFor(phase)} (SNR ${phase.snr} dB)` : phaseLabelFor(phase));
 
   updatePracticeMeter(isPractice, practiceStep);
 
@@ -1085,28 +1233,37 @@ function onResponse(e) {
   btn.classList.add(correctBoth ? "correct" : "incorrect");
   setGridEnabled(false);
 
-  if (!state.pendingIsPractice) {
-    const phase = state.phases[state.phaseIdx];
-    const record = {
-      participant: state.config.participantId || "anonyme",
-      phase: phase.label,
-      noiseType: state.config.noiseType,
-      noisePresentation: state.config.noisePresentation,
-      trial: state.trialIndex + 1,
-      snr: state.pendingSnr,
-      talker: entry.talker,
-      sex: entry.sex,
-      callsign: entry.callsign,
-      targetColor: entry.color,
-      targetNumber: entry.number,
-      respColor, respNumber,
-      correctColor, correctNumber, correctBoth,
-      rt_ms: Math.round(rt),
-    };
+  // Un seul gabarit d'enregistrement pour l'entraînement et pour la mesure : le
+  // CSV garde ainsi les mêmes colonnes quel que soit le premier essai écrit, et
+  // la colonne `comptabilise` dit lesquels entrent dans le score (0 = non).
+  const phase = state.phases[state.phaseIdx];
+  const isPractice = state.pendingIsPractice;
+  const record = {
+    participant: state.config.participantId || "anonyme",
+    phase: isPractice
+      ? (state.practiceRetried ? "Entraînement (reprise)" : "Entraînement")
+      : phase.label,
+    comptabilise: isPractice ? 0 : 1,
+    noiseType: state.config.noiseType,
+    noisePresentation: state.config.noisePresentation,
+    trial: isPractice ? state.practiceResults.length + 1 : state.trialIndex + 1,
+    snr: state.pendingSnr,
+    talker: entry.talker,
+    sex: entry.sex,
+    callsign: entry.callsign,
+    targetColor: entry.color,
+    targetNumber: entry.number,
+    respColor, respNumber,
+    correctColor, correctNumber, correctBoth,
+    rt_ms: Math.round(rt),
+  };
+  state.allResults.push(record);
+
+  if (!isPractice) {
     state.results.push(record);
-    state.allResults.push(record);
     state.trialIndex++;
   } else {
+    state.practiceResults.push({ snr: state.pendingSnr, correctBoth });
     state.practiceRemaining--;
   }
   updateLiveScore();
@@ -1163,6 +1320,102 @@ function computeConfirmation() {
   state.finalConclusion = snr50 >= SNR50_ABNORMAL_THRESHOLD ? "anormal_confirme" : "normal_confirme";
 }
 
+
+// ---------------------------------------------------------------- passage entraînement → mesure
+// Le sujet doit savoir, sans ambiguïté, quand l'entraînement s'arrête et quand
+// commence la mesure qui compte. Avant le premier essai comptabilisé d'une
+// phase précédée d'un entraînement, on interpose un écran d'annonce qu'il
+// valide lui-même : ni surprise, ni essai perdu parce qu'il n'était pas prêt.
+function setTestBodyHidden(hidden) {
+  const v = hidden ? "none" : "";
+  setDisplay(".listen-zone", v);
+  setDisplay(".instruction", v);
+  setDisplay("#grid", v);
+  setDisplay(".test-status", v);
+  setDisplay("#practiceMeter", hidden ? "none" : "");
+  setDisplay("#liveScore", v);
+}
+
+// Bilan de l'entraînement montré au sujet. Le score brut ne suffit pas à dire
+// s'il a compris la tâche : au dernier palier, le bruit est celui de la mesure
+// et se tromper y est attendu. Ce qui est diagnostique, c'est la moitié la
+// moins bruitée de l'échelle — s'y tromper signale un casque mal mis, un
+// volume trop bas ou une consigne mal comprise, pas une audition en cause.
+function practiceFeedback() {
+  const res = state.practiceResults;
+  if (!res.length) return null;
+  const correct = res.filter(r => r.correctBoth).length;
+  const easy = res.slice(0, Math.max(1, Math.ceil(res.length / 2)));
+  const easyOk = easy.filter(r => r.correctBoth).length;
+  const tolerance = easy.length >= PRACTICE_EASY_TOLERANCE_MIN_TRIALS ? PRACTICE_EASY_TOLERANCE : 0;
+
+  let tone, titre, texte;
+  if (easyOk >= easy.length - tolerance) {
+    tone = "ok";
+    titre = "C'est compris";
+    texte = "Vous avez bien retrouvé la couleur et le chiffre tant que le bruit restait modéré : "
+          + "c'est exactement ce qui est demandé.";
+  } else if (easyOk > 0) {
+    tone = "warn";
+    titre = "Tâche comprise, mais de justesse";
+    texte = "Vous n'avez retrouvé qu'une partie des phrases les moins bruitées. Avant de continuer, "
+          + "vérifiez que le casque est bien mis sur les deux oreilles et que le volume est "
+          + "réglé à un niveau confortable.";
+  } else {
+    tone = "bad";
+    titre = "Vérifiez votre installation";
+    texte = "Aucune phrase retrouvée alors que le bruit était encore faible. Vérifiez le casque "
+          + "(les deux oreilles) et le volume, et prévenez l'examinateur avant de continuer.";
+  }
+  return { correct, total: res.length, easyOk, easyTotal: easy.length, tone, titre, texte };
+}
+
+function renderPracticeFeedback() {
+  const el = $("#phaseGateFeedback");
+  if (!el) return null;
+  const fb = practiceFeedback();
+  if (!fb) { el.innerHTML = ""; el.className = "gate-feedback"; return null; }
+  const marks = state.practiceResults
+    .map(r => `<i class="gf-mark ${r.correctBoth ? "hit" : "miss"}">${r.correctBoth ? "✓" : "✗"}</i>`)
+    .join("");
+  el.className = "gate-feedback gf-" + fb.tone;
+  el.innerHTML = `<p class="gf-title">${fb.titre}</p>
+    <p class="gf-score"><strong>${fb.correct}</strong> bonne${fb.correct > 1 ? "s" : ""} réponse${fb.correct > 1 ? "s" : ""} sur ${fb.total} à l'entraînement</p>
+    <div class="gf-marks">${marks}</div>
+    <p class="gf-text">${fb.texte}</p>
+    <p class="gf-note">Les derniers essais sont les plus bruités : s'y tromper est normal et ne dit rien de votre audition.</p>`;
+  return fb;
+}
+
+function showPhaseGate() {
+  const gate = $("#phaseGate");
+  if (!gate) return false;
+  // Rien ne justifie de laisser le sujet dans le bruit pendant qu'il lit
+  // l'annonce : en présentation continue, le bruit tourne encore ici.
+  if (state.noise && state.noise.running) noiseOff();
+  state.noiseStopAt = null;
+  const n = state.trials.length;
+  const fb = renderPracticeFeedback();
+  const t = $("#phaseGateText");
+  if (t) t.innerHTML = `L'entraînement est terminé. La <strong>mesure</strong> commence maintenant : `
+    + `${n} essais au niveau de bruit du dernier essai d'entraînement, sans interruption. `
+    + `Cette fois, <strong>vos réponses comptent</strong>.`;
+  // Refaire l'entraînement n'est proposé que s'il s'est mal passé, et une seule
+  // fois : c'est un filet de sécurité pour un casque mal mis, pas une option
+  // que le sujet peut répéter jusqu'à obtenir le score qui lui plaît.
+  setDisplay("#btnPhaseGateRedo",
+    (fb && fb.tone !== "ok" && !state.practiceRetried) ? "" : "none");
+  setTestBodyHidden(true);
+  gate.hidden = false;
+  return true;
+}
+
+function hidePhaseGate() {
+  const gate = $("#phaseGate");
+  if (gate) gate.hidden = true;
+  setTestBodyHidden(false);
+}
+
 // Échelle de SNR de l'entraînement : n paliers régulièrement espacés de
 // `start` à `end` inclus (donc décroissants si end < start). n = 1 renvoie le
 // seul palier `end` — c'est-à-dire le SNR du test. Arrondi au dixième de dB.
@@ -1183,7 +1436,7 @@ function updatePracticeMeter(isPractice, step) {
   el.style.display = "";
   el.innerHTML = state.practiceSnrs
     .map((_, i) => `<i class="pm-dot${i <= step ? " on" : ""}"></i>`)
-    .join("") + '<span class="pm-label">difficulté croissante</span>';
+    .join("") + '<span class="pm-label">niveau de bruit croissant</span>';
 }
 
 function beginPhase(phaseIdx, practiceTrials) {
@@ -1192,6 +1445,10 @@ function beginPhase(phaseIdx, practiceTrials) {
   state.trialIndex = 0;
   state.practiceRemaining = practiceTrials || 0;
   state.practiceTotal = practiceTrials || 0;
+  state.gatePassed = false;
+  state.practiceResults = [];
+  state.practiceRetried = false;
+  hidePhaseGate();
   state.practiceSnrs = buildPracticeLadder(
     state.practiceTotal,
     state.config.practiceSnrStart,
@@ -1247,6 +1504,67 @@ const CONCLUSION_TEXT = {
   indetermine: { label: "Indéterminé", detail: "La relation score/SNR obtenue sur les trois essais ne permet pas d'estimer un seuil à 50 % — envisager de recommencer le test." },
 };
 
+// Mêmes conclusions, dites au sujet : le SNR en décibels ne lui a jamais été
+// montré pendant le test, il n'a pas à réapparaître dans ses résultats.
+const CONCLUSION_TEXT_PATIENT = {
+  normal: `Vous avez retrouvé assez de phrases dans le bruit le plus fort (au moins ${NORMAL_MIN_CORRECT} sur ${NUM_TRIALS_FOR_CLASSIFICATION}).`,
+  anormal: `Vous avez retrouvé peu de phrases dans le bruit le plus fort (${ABNORMAL_MAX_CORRECT} ou moins sur ${NUM_TRIALS_FOR_CLASSIFICATION}).`,
+  indetermine: "Les scores obtenus ne permettent pas de conclure — le test peut être refait.",
+  anormal_confirme: "Estimation obtenue à partir des trois niveaux de bruit testés.",
+  normal_confirme: "Estimation obtenue à partir des trois niveaux de bruit testés.",
+};
+
+// Situe le score du test principal sur l'échelle de décision : la zone normale
+// (>= NORMAL_MIN_CORRECT bonnes réponses), la zone anormale (<= ABNORMAL_MAX_CORRECT)
+// et, entre les deux, la zone où le test seul ne tranche pas et appelle les
+// phases de confirmation. Les bornes sont placées à la demi-unité pour que le
+// seuil entier tombe du bon côté de la frontière.
+function renderNormalityScale() {
+  const el = $("#resultsNormality");
+  if (!el) return;
+  const main = state.phaseHistory.find(p => p.key === "main");
+  if (!main) { el.innerHTML = ""; el.style.display = "none"; return; }
+  el.style.display = "";
+
+  const N = main.total;
+  // Les seuils sont calibrés pour un test de 32 essais : hors de ce cas, les
+  // zones n'ont pas de sens et on ne montre pas d'échelle trompeuse.
+  if (N !== NUM_TRIALS_FOR_CLASSIFICATION) {
+    el.innerHTML = `<h2>Zone de normalité</h2>
+      <p class="hint">Les zones de décision sont calibrées pour un test de ${NUM_TRIALS_FOR_CLASSIFICATION} essais
+      (celui-ci en comptait ${N}) — aucune zone n'est affichée.</p>`;
+    return;
+  }
+
+  const b1 = (ABNORMAL_MAX_CORRECT + 0.5) / N * 100;
+  const b2 = (NORMAL_MIN_CORRECT - 0.5) / N * 100;
+  const pos = Math.min(100, Math.max(0, main.correct / N * 100));
+  const zone = main.correct >= NORMAL_MIN_CORRECT ? "normale"
+             : main.correct <= ABNORMAL_MAX_CORRECT ? "anormale" : "intermédiaire";
+
+  el.innerHTML = `
+    <h2>Zone de normalité</h2>
+    <div class="norm-scale">
+      <div class="norm-band norm-bad"  style="width:${b1}%"></div>
+      <div class="norm-band norm-mid"  style="width:${b2 - b1}%"></div>
+      <div class="norm-band norm-good" style="width:${100 - b2}%"></div>
+      <div class="norm-marker" style="left:${pos}%"><span>${main.correct}</span></div>
+    </div>
+    <div class="norm-legend">
+      <span><i class="norm-key norm-bad"></i>Anormal — ${ABNORMAL_MAX_CORRECT} ou moins</span>
+      <span><i class="norm-key norm-mid"></i>Zone intermédiaire</span>
+      <span><i class="norm-key norm-good"></i>Normal — ${NORMAL_MIN_CORRECT} et plus</span>
+    </div>
+    <p class="norm-verdict">${main.correct} bonne${main.correct > 1 ? "s" : ""} réponse${main.correct > 1 ? "s" : ""} sur ${N} — <strong>zone ${zone}</strong>.</p>
+    ${zone === "intermédiaire"
+      ? `<p class="hint">Dans cette zone, le test principal ne suffit pas à conclure : ce sont les essais de confirmation qui tranchent.</p>`
+      : ""}
+    ${(showsParameters() && state.snr50 !== null && state.snr50 !== undefined)
+      ? `<p class="hint">Seuil estimé à 50 % de réussite : <strong>${state.snr50.toFixed(1)} dB</strong> — la limite de décision est ${SNR50_ABNORMAL_THRESHOLD} dB (au-delà : anormal).</p>`
+      : ""}
+    <p class="hint">Prototype non calibré : ces zones sont des repères de mise au point, pas un seuil diagnostique.</p>`;
+}
+
 function renderResults() {
   const summaryEl = $("#resultsSummary");
   const conclusionEl = $("#resultsConclusion");
@@ -1262,21 +1580,30 @@ function renderResults() {
     if (classification === "anormal_confirme" || classification === "normal_confirme") {
       detail = `SNR à 50 % de réussite estimé à ${state.snr50.toFixed(1)} dB à partir des trois essais (-12, -9 et -6 dB) — seuil de décision : ${SNR50_ABNORMAL_THRESHOLD} dB.`;
     }
+    if (!showsParameters()) detail = CONCLUSION_TEXT_PATIENT[classification] || "";
     conclusionEl.innerHTML = `
       <p style="font-size:1.4rem;font-weight:700;margin:0 0 6px">${c.label}</p>
       <p class="hint" style="margin:0">${detail}</p>
     `;
   }
 
-  const rows = state.phaseHistory.map(p => ({ snr: p.snr, pct: p.pct, n: p.total, label: p.label }));
+  const rows = state.phaseHistory.map(p => ({ snr: p.snr, pct: p.pct, n: p.total, label: p.label, key: p.key }));
+  // Côté sujet : ni colonne SNR, ni courbe score/SNR (elle réintroduirait les
+  // décibels sur son axe), et les phases portent le nom qu'il a vu à l'écran.
+  const tech = showsParameters();
   summaryEl.innerHTML = `
-    <h2>Score par phase de test</h2>
+    <h2>${tech ? "Score par phase de test" : "Votre score"}</h2>
     <table style="width:100%">
-      <tr><th style="text-align:left">Phase</th><th style="text-align:left">SNR (dB)</th><th style="text-align:left">% correct</th><th style="text-align:left">n</th></tr>
-      ${rows.map(r => `<tr><td>${r.label}</td><td>${r.snr.toFixed(1)}</td><td>${r.pct.toFixed(0)}%</td><td>${r.n}</td></tr>`).join("")}
+      <tr><th style="text-align:left">Phase</th>${tech ? '<th style="text-align:left">SNR (dB)</th>' : ""}<th style="text-align:left">% correct</th><th style="text-align:left">n</th></tr>
+      ${rows.map(r => `<tr><td>${tech ? r.label : (PATIENT_PHASE_LABELS[r.key] || r.label)}</td>${tech ? `<td>${r.snr.toFixed(1)}</td>` : ""}<td>${r.pct.toFixed(0)}%</td><td>${r.n}</td></tr>`).join("")}
     </table>
   `;
-  drawChart(rows);
+  renderNormalityScale();
+  setDisplay("#resultsChart", tech ? "" : "none");
+  // La courbe ne doit jamais empêcher l'affichage du reste : une exception de
+  // getContext() ici (canvas indisponible) interrompait renderResults() avant
+  // le tableau essai par essai.
+  if (tech) { try { drawChart(rows); } catch (e) { console.error("courbe indisponible:", e); } }
 
   renderTable(state.allResults);
 }
@@ -1306,10 +1633,38 @@ function drawChart(rows) {
   ctx.fillText(`${minSnr.toFixed(0)} dB`, pad - 10, pad + h + 18);
   ctx.fillText(`${maxSnr.toFixed(0)} dB`, pad + w - 20, pad + h + 18);
 
+  // Repères de décision : la ligne des 50 % (le seuil qu'on cherche à estimer)
+  // et, si elle tombe dans l'étendue mesurée, la limite de décision sur le
+  // SNR-50. À gauche de cette limite : zone normale.
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = "#5a678a";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad, yFor(50)); ctx.lineTo(pad + w, yFor(50));
+  ctx.stroke();
+  if (SNR50_ABNORMAL_THRESHOLD >= minSnr && SNR50_ABNORMAL_THRESHOLD <= maxSnr) {
+    const xT = xFor(SNR50_ABNORMAL_THRESHOLD);
+    ctx.fillStyle = "rgba(62, 161, 107, 0.10)";   // zone normale
+    ctx.fillRect(pad, pad, xT - pad, h);
+    ctx.fillStyle = "rgba(217, 96, 58, 0.10)";    // zone anormale
+    ctx.fillRect(xT, pad, pad + w - xT, h);
+    ctx.strokeStyle = "#d9603a";
+    ctx.beginPath();
+    ctx.moveTo(xT, pad); ctx.lineTo(xT, pad + h);
+    ctx.stroke();
+    ctx.fillStyle = "#9aa7c2";
+    ctx.fillText(`seuil ${SNR50_ABNORMAL_THRESHOLD} dB`, Math.min(xT + 6, pad + w - 78), pad + 12);
+  }
+  ctx.restore();
+
+  // Les phases arrivent dans l'ordre de passation (-9, puis -12, puis -6) et non
+  // dans l'ordre des abscisses : sans tri, la polyligne revient en arrière et
+  // se croise elle-même.
   ctx.strokeStyle = "#4f8cff";
   ctx.lineWidth = 2;
   ctx.beginPath();
-  rows.forEach((r, i) => {
+  [...rows].sort((a, b) => a.snr - b.snr).forEach((r, i) => {
     const x = xFor(r.snr), y = yFor(r.pct);
     if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
   });
@@ -1325,7 +1680,9 @@ function drawChart(rows) {
 function renderTable(results) {
   const table = $("#resultsTable");
   if (!results.length) { table.innerHTML = ""; return; }
-  const cols = ["phase","trial","snr","talker","sex","callsign","targetColor","targetNumber","respColor","respNumber","correctBoth","rt_ms"];
+  const cols = showsParameters()
+    ? ["phase","comptabilise","trial","snr","talker","sex","callsign","targetColor","targetNumber","respColor","respNumber","correctBoth","rt_ms"]
+    : ["phase","trial","talker","callsign","targetColor","targetNumber","respColor","respNumber","correctBoth","rt_ms"];
   table.innerHTML = `
     <tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr>
     ${results.map(r => `<tr>${cols.map(c => `<td>${r[c]}</td>`).join("")}</tr>`).join("")}
@@ -1429,6 +1786,20 @@ function wireSetupScreen() {
   on("#practiceTrials", "input", updateLadderPreview);
   on("#practiceSnrStart", "input", updateLadderPreview);
   updateLadderPreview();
+
+  on("#btnPhaseGateRedo", "click", () => {
+    state.practiceRetried = true;
+    state.practiceRemaining = state.practiceTotal;
+    state.practiceResults = [];
+    hidePhaseGate();
+    nextTrial();
+  });
+
+  on("#btnPhaseGate", "click", () => {
+    state.gatePassed = true;
+    hidePhaseGate();
+    nextTrial();
+  });
 
   on("#btnPreviewCorpus", "click", () => previewNoise("corpus"));
   on("#btnPreviewStandard", "click", () => previewNoise("standard"));

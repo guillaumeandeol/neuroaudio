@@ -2568,10 +2568,10 @@ function drawEligibilityPlot(canvas, results, largeurImposee) {
   path(s => normP(s - NORM_MARGIN_DB)); ctx.stroke();
   ctx.setLineDash([]);
 
-  // « Eligibility zone »
-  ctx.fillStyle = "#94262e"; ctx.font = `italic ${px(14)}px ${FONT}`; ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillText("Zone d'éligibilité", X(-16), Y(0.04));
+  // Les textes du graphique sont posés en dernier, sur une plaque, et chacun
+  // évite les plaques déjà posées : sinon les courbes, les barres d'erreur et
+  // les losanges leur passent dessus.
+  const plaques = [];
 
   // résultats : IC (barres d'erreur) et losanges, couleur de la zone
   results.forEach(r => {
@@ -2599,10 +2599,10 @@ function drawEligibilityPlot(canvas, results, largeurImposee) {
       path(s => 1 / (1 + Math.exp(-(f.b0 + f.b1 * s)))); ctx.stroke();
       const pred = f.b1 > 0 ? -f.b0 / f.b1 : NaN;
       if (Number.isFinite(pred) && pred >= ELIG_SNR_MIN && pred <= ELIG_SNR_MAX) {
-        srtLabels.push({ x: pred, y: 0.60, colour: "#3a6fc4", lines: ["SRT50 prédit", `${pred.toFixed(1)} dB`], lw: px(3) });
+        srtLabels.push({ x: pred, y: 0.60, colour: "#3a6fc4", texte: `SRT50 prédit ${pred.toFixed(1)} dB`, lw: px(3) });
       }
     }
-    srtLabels.push({ x: NORM_SRT, y: 0.44, colour: "#444444", lines: ["SRT50 normatif", `${NORM_SRT.toFixed(1)} dB`], lw: px(2.8) });
+    srtLabels.push({ x: NORM_SRT, y: 0.44, colour: "#444444", texte: `SRT50 normatif ${NORM_SRT.toFixed(1)} dB`, lw: px(2.8) });
 
     // Intervalle de confiance du SRT50 de la carte, tracé sur la ligne des 50 %.
     const carte = estimateSrt(state.phaseHistory);
@@ -2624,12 +2624,47 @@ function drawEligibilityPlot(canvas, results, largeurImposee) {
       ctx.beginPath(); ctx.moveTo(X(l.x), M.t); ctx.lineTo(X(l.x), M.t + ph); ctx.stroke();
       ctx.setLineDash([]); ctx.lineCap = "butt";
     });
-    srtLabels.forEach(l => {
-      ctx.fillStyle = l.colour; ctx.font = `bold ${px(13)}px ${FONT}`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-      const lh = px(15);
-      l.lines.forEach((t, i) => ctx.fillText(t, X(l.x + 0.2), Y(l.y) + (i - 0.5) * lh));
-    });
   }
+
+  // ------------------------------------------------------------------ textes
+  // Tracés en dernier : ainsi les courbes, les traits verticaux et les barres
+  // d'erreur passent dessous, jamais dessus.
+  //
+  // « Zone d'éligibilité » est écrit au milieu de la zone ombrée, vers 0 dB,
+  // là où elle est la plus haute et où rien ne passe — plutôt qu'en bas à
+  // gauche, où le texte était serré entre les courbes.
+  ctx.fillStyle = "#94262e"; ctx.font = `italic ${px(15)}px ${FONT}`; ctx.textBaseline = "middle";
+  ctx.textAlign = "center";
+  const xZone = X(0), yZone = Y(normP(0 - NORM_MARGIN_DB) / 2);
+  const largeurZone = ctx.measureText("Zone d'éligibilité").width;
+  ctx.fillText("Zone d'éligibilité", xZone, yZone);
+  plaques.push({ x: xZone - largeurZone / 2 - px(5), y: yZone - px(11), w: largeurZone + px(10), h: px(22) });
+
+  // Étiquettes sur une seule ligne (« SRT50 prédit -6.3 dB »), posées sur une
+  // plaque pour rester lisibles par-dessus les courbes. Elles vont à droite de
+  // leur trait, sauf si elles dépasseraient du cadre — sinon le rognage les
+  // couperait. Si les deux plaques se chevauchent (SRT prédit et normatif
+  // proches), la seconde descend juste en dessous de la première.
+  ctx.font = `bold ${px(13)}px ${FONT}`; ctx.textBaseline = "middle";
+  srtLabels.forEach(l => {
+    ctx.fillStyle = l.colour;
+    const largeurTexte = ctx.measureText(l.texte).width;
+    const aDroite = X(l.x + 0.2) + largeurTexte <= M.l + pw - px(4);
+    const xTexte = X(l.x + (aDroite ? 0.2 : -0.2));
+    let yTexte = Y(l.y);
+    const hauteurPlaque = px(13) + 2 * 3;
+    for (let garde = 0; garde < 4; garde++) {
+      const g = aDroite ? xTexte : xTexte - largeurTexte;
+      const chevauche = plaques.some(pl =>
+        g < pl.x + pl.w && g + largeurTexte > pl.x &&
+        yTexte - hauteurPlaque / 2 < pl.y + pl.h && yTexte + hauteurPlaque / 2 > pl.y);
+      if (!chevauche) break;
+      yTexte += hauteurPlaque + px(4);
+    }
+    plaques.push(texteSurPlaque(ctx, l.texte, xTexte, yTexte,
+      { align: aDroite ? "left" : "right", hauteur: px(13) }));
+  });
+
   ctx.restore();
 
   // bordure du panneau
@@ -2737,6 +2772,31 @@ function colonneXlsx(i) {
   let nom = "", n = i + 1;
   while (n > 0) { const m = (n - 1) % 26; nom = String.fromCharCode(65 + m) + nom; n = Math.floor((n - 1) / 26); }
   return nom;
+}
+
+// Texte du graphique posé sur une petite plaque de fond : sans elle, les
+// étiquettes se confondent avec les courbes, les barres d'erreur et la grille
+// dès qu'elles les croisent. La plaque reprend le fond du panneau, presque
+// opaque, avec un peu de marge autour du texte.
+function texteSurPlaque(ctx, texte, x, y, options) {
+  const o = options || {};
+  const align = o.align || "left";
+  const l = ctx.measureText(texte).width;
+  const h = o.hauteur || 14;
+  const mx = o.margeX === undefined ? 5 : o.margeX;
+  const my = o.margeY === undefined ? 3 : o.margeY;
+  const gauche = align === "right" ? x - l : x;
+  const rx = gauche - mx, ry = y - h / 2 - my, rw = l + 2 * mx, rh = h + 2 * my;
+  ctx.save();
+  ctx.fillStyle = o.fond || "rgba(250, 251, 253, 0.92)";
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(rx, ry, rw, rh, Math.min(6, rh / 2));
+  else ctx.rect(rx, ry, rw, rh);          // Safari ancien : coins droits
+  ctx.fill();
+  ctx.restore();
+  ctx.textAlign = align;
+  ctx.fillText(texte, x, y);
+  return { x: rx, y: ry, w: rw, h: rh };
 }
 
 function feuilleXml(rows, largeurs) {
@@ -3598,6 +3658,7 @@ async function verifOfflineAnalysis() {
   verifSetPlayingUI(false);
   verifPickStimulus();
 })();
+
 
 
 </script>

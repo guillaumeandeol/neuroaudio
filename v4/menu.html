@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vegah v4 — choisir une version</title>
+<style>
+/* Feuille de style embarquée : ce menu doit pouvoir être posé n'importe où
+   (dossier de travail, à côté des builds autonomes, sur GitHub Pages) sans
+   dépendre de style.css. Mêmes couleurs que l'app. */
+:root {
+  --bg: #0f1420;
+  --panel: #171f2f;
+  --panel-border: #2a3550;
+  --text: #e8ecf6;
+  --text-dim: #9aa7c2;
+  --accent: #4f8cff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--panel-border);
+}
+.brand { font-weight: 700; font-size: 1.1rem; }
+.version-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  margin-left: 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.7rem;
+  vertical-align: middle;
+}
+.brand-sub { color: var(--text-dim); font-weight: 400; font-size: 0.9rem; margin-left: 8px; }
+.institution-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--panel-border);
+  background: #0b101c;
+}
+.logo-badge, .gsp-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+.gsp-badge { border-color: var(--accent); color: var(--accent); }
+.motto { font-style: italic; color: var(--text-dim); font-size: 0.85rem; }
+
+main { max-width: 860px; margin: 0 auto; padding: 26px 18px 40px; }
+h1 { font-size: 1.5rem; margin: 0 0 6px; }
+.lead { color: var(--text-dim); margin: 0 0 22px; line-height: 1.5; }
+
+.cartes { display: grid; gap: 14px; }
+.carte {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 18px;
+  transition: border-color .12s ease, transform .12s ease;
+}
+.carte:hover, .carte:focus-visible { border-color: var(--accent); transform: translateY(-1px); }
+.carte:active { transform: translateY(1px) scale(0.995); }
+.carte-tete { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.carte h2 { margin: 0; font-size: 1.12rem; }
+.duree {
+  padding: 1px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+}
+.carte p { margin: 8px 0 0; color: var(--text-dim); font-size: 0.92rem; line-height: 1.5; }
+.fichier {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+.carte-dev { border-style: dashed; }
+.carte-dev .duree { border-color: #d9a03a; color: #edc274; }
+
+.note {
+  margin-top: 22px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #d9a03a;
+  background: rgba(217, 160, 58, 0.10);
+}
+.note p { margin: 0; font-size: 0.88rem; line-height: 1.5; }
+.disclaimer { color: var(--text-dim); font-size: 0.78rem; margin-top: 22px; line-height: 1.45; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Vegah <span class="version-badge">v4</span>
+    <span class="brand-sub">CRM — audiométrie vocale dans le bruit</span></div>
+</header>
+
+<div class="institution-bar">
+  <span class="logo-badge" title="Service de Santé des Armées">SSA</span>
+  <span class="logo-badge" title="Institut de Recherche Biomédicale des Armées">IRBA</span>
+  <span class="motto">« La connaissance au service des forces »</span>
+  <span class="gsp-badge">GSP Bruit</span>
+</div>
+
+<main>
+  <h1>Choisir une version</h1>
+  <p class="lead">Quatre entrées, la même application. L'examinateur règle et suit la passation ;
+  le sujet répond sur une page sans paramètres ni décibels ; la version développeur simule un test
+  entier pour vérifier les écrans.</p>
+
+  <div class="cartes">
+    <a class="carte" id="lienExaminateur" href="#">
+      <div class="carte-tete"><h2>Examinateur</h2><span class="duree">Dépistage ou clinique</span></div>
+      <p>Écran de configuration complet : choix du mode, nombre d'essais, bruit et présentation,
+      vérification du SNR. À la fin, la courbe psychométrique, les zones par série, le SRT et son
+      intervalle de confiance, puis les exports Excel et PDF.</p>
+      <span class="fichier" id="fichierExaminateur"></span>
+    </a>
+
+    <a class="carte" id="lienDepistage" href="#">
+      <div class="carte-tete"><h2>Sujet — test court</h2><span class="duree">Dépistage, ~5 min</span></div>
+      <p>Page destinée à la personne testée : réglages figés, aucun décibel, ni score en cours.
+      32 essais à un seul niveau de bruit ; deux séries complémentaires ne s'ajoutent que si le
+      score ne permet pas de conclure.</p>
+      <span class="fichier" id="fichierDepistage"></span>
+    </a>
+
+    <a class="carte" id="lienClinique" href="#">
+      <div class="carte-tete"><h2>Sujet — test complet</h2><span class="duree">Clinique, ~15 min</span></div>
+      <p>Même page, mode clinique : trois séries de 32 essais à trois niveaux de bruit, avec une
+      courte pause entre chacune, pour estimer le seuil d'intelligibilité (SRT).</p>
+      <span class="fichier" id="fichierClinique"></span>
+    </a>
+
+    <a class="carte carte-dev" id="lienDev" href="#">
+      <div class="carte-tete"><h2>Développeur</h2><span class="duree">Passation simulée</span></div>
+      <p>Déroule un test entier en une seconde, avec des réponses simulées menant à un résultat
+      normal ou anormal, pour vérifier les écrans de fin et les exports. Ne mesure rien.</p>
+      <span class="fichier" id="fichierDev"></span>
+    </a>
+  </div>
+
+  <div class="note" role="note">
+    <p><strong>Prototype de recherche en cours de développement.</strong> Ce n'est pas un dispositif
+    médical calibré : les résultats n'ont pas de valeur diagnostique et ne remplacent pas un bilan
+    auditif réalisé par un professionnel. La page développeur, elle, ne mesure rien du tout.</p>
+  </div>
+
+  <p class="disclaimer">Corpus CRM français — Isnard, Chastres &amp; Andéol (2024),
+  <em>JASA Express Letters</em> 4, 075203. Valeurs normatives : app de normalisation CRM
+  (43 sujets normo-entendants, SRT normatif -11,1 dB).</p>
+</main>
+
+<script>
+/* Les trois pages existent sous deux jeux de noms : dans le dossier de travail
+   et sur GitHub Pages (index.html, patient.html, dev.html), et à côté des builds
+   autonomes (crm_v4_*.html). Le menu choisit d'après son propre nom de fichier :
+   posé sous le nom crm_v4_menu.html, il pointe vers les builds autonomes. */
+(function menu() {
+  var autonome = /crm_v4_/i.test(location.pathname.split("/").pop() || "");
+  var cibles = autonome
+    ? { exam: "crm_v4_standalone.html", sujet: "crm_v4_patient_standalone.html", dev: "crm_v4_dev_standalone.html" }
+    : { exam: "index.html", sujet: "patient.html", dev: "dev.html" };
+
+  var liens = [
+    ["lienExaminateur", "fichierExaminateur", cibles.exam],
+    ["lienDepistage", "fichierDepistage", cibles.sujet],
+    ["lienClinique", "fichierClinique", cibles.sujet + "?mode=clinique"],
+    ["lienDev", "fichierDev", cibles.dev],
+  ];
+  liens.forEach(function (l) {
+    var a = document.getElementById(l[0]);
+    var etiquette = document.getElementById(l[1]);
+    if (a) a.href = l[2];
+    if (etiquette) etiquette.textContent = l[2];
+  });
+})();
+</script>
+</body>
+</html>

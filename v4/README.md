@@ -5,9 +5,11 @@ Aucun dossier `audio/` n'est nécessaire ici.
 
 | Page | URL | Pour qui |
 |---|---|---|
+| `menu.html` | https://guillaumeandeol.github.io/neuroaudio/v4/menu.html | **Menu** — choisir l'une des entrées ci-dessous |
 | `index.html` | https://guillaumeandeol.github.io/neuroaudio/v4/ | Examinateur — choix du mode, configuration complète, vérification du SNR |
 | `patient.html` | https://guillaumeandeol.github.io/neuroaudio/v4/patient.html | Sujet — **dépistage** (test court) |
 | `patient.html?mode=clinique` | https://guillaumeandeol.github.io/neuroaudio/v4/patient.html?mode=clinique | Sujet — **clinique** (test complet) |
+| `dev.html` | https://guillaumeandeol.github.io/neuroaudio/v4/dev.html | Mise au point — **passation simulée**, résultat normal ou anormal en une seconde |
 
 ## Ce qui change par rapport à la v3
 
@@ -26,7 +28,12 @@ ou « Test complet » sous son titre.
 0 et 100 %, SRT = −b0/b1, comme dans l'app de normalisation CRM
 (<https://ipiup.github.io/CRM_normalization/>). Elle remplace la régression linéaire de la v3, et
 s'applique aussi aux confirmations du dépistage. Un SRT hors de l'intervalle testé est signalé
-comme extrapolé. Décision : anormal si SRT ≥ -8,1 dB.
+comme extrapolé. La référence est le modèle normatif de cette app (43 sujets normo-entendants,
+SRT normatif -11,1 dB) ; l'examinateur voit le **SRT final**, son écart à la norme et s'il dépasse la
+marge de 3 dB (limite -8,1 dB), ainsi que la zone rouge / orange / vert de chaque série selon la règle
+de l'app (IC de Wilson 95 % comparé à la norme décalée de 3 dB). Le sujet voit le verdict, sans décibels. L'écran de résultats de l'examinateur reprend la section
+« Psychometric curve — Eligibility zone » de cette app : même graphique, même tableau de résultats
+détaillés, même carte SRT50.
 
 **Côté sujet**, un écran « Courte pause » annonce chaque changement de série (le niveau de bruit
 change). En v3, ces séries s'enchaînaient sans prévenir.
@@ -34,4 +41,11 @@ change). En v3, ces séries s'enchaînaient sans prévenir.
 **Corrections** : un test interrompu pendant une confirmation n'affiche plus un écran de résultats
 vide ; tout test interrompu conclut « Test interrompu » et affiche le reste des résultats.
 
-Le CSV porte une nouvelle colonne `mode`.
+**Résultats et exports** : l'écran s'arrête à la bande de couleur (plus de tableau essai par essai).
+Deux exports : un **classeur Excel** (feuilles *Compte rendu*, *Séries*, *Essais*) et un **PDF** de
+compte rendu, avec les coordonnées de l'examinateur s'il les saisit. En cas de résultat anormal, un
+encadré « Conduite à tenir » indique qu'un bilan auditif avec audiométrie vocale dans le bruit sur
+dispositif médical est nécessaire. Le SRT est donné avec son intervalle de confiance à 95 %, et le
+temps de réponse cumulé est affiché par série (délai entre le début de la phrase et le clic).
+
+L'indicatif est **Delta** dans les trois pages.

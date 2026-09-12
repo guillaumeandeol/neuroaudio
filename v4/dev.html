@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Vegah v4 — Test d'audition dans le bruit — version autonome (32 phrases)</title>
+<title>Vegah v4 — version développeur (passation automatique) — version autonome (32 phrases)</title>
 <style>
 :root {
   --bg: #0f1420;
@@ -837,10 +837,10 @@ ol.phases li + li { border-top: 1px solid var(--line, rgba(255,255,255,0.12)); }
 
 </style>
 </head>
-<body data-hide-parameters>
+<body>
 
 <header class="topbar">
-  <div class="brand">Vegah <span class="version-badge" title="Version avec test court ou test complet">v4</span> <span class="brand-sub">Test d'audition dans le bruit</span></div>
+  <div class="brand">Vegah <span class="version-badge" title="Version développeur — passation simulée">v4 DEV</span> <span class="brand-sub">Passation automatique</span></div>
   <div id="trialCounter" class="trial-counter"></div>
 </header>
 
@@ -855,119 +855,82 @@ ol.phases li + li { border-top: 1px solid var(--line, rgba(255,255,255,0.12)); }
 
 <main id="app">
 
-  <!-- Paramètres figés : invisibles et inaccessibles pour le sujet.
-       Ils sont lus tels quels par readConfig() dans app.js.
-       Pour les modifier, c'est ici et nulle part ailleurs. -->
-  <div hidden id="fixedConfig">
-    <select id="targetCallsign"><option value="Delta">Delta</option></select>
-    <label><input type="radio" name="noiseType" value="corpus"> corpus</label>
-    <label><input type="radio" name="noiseType" value="standard" checked> standard</label>
-    <label><input type="radio" name="noisePresentation" value="continu"> continu</label>
-    <label><input type="radio" name="noisePresentation" value="declenche" checked> déclenché</label>
-    <input type="number" id="numTrials" value="32">
-    <input type="number" id="practiceTrials" value="6">
-    <input type="number" id="practiceSnrStart" value="6">
-    <!-- mode de passation : dépistage par défaut, clinique avec patient.html?mode=clinique -->
-    <label><input type="radio" name="testMode" value="depistage" checked> dépistage</label>
-    <label><input type="radio" name="testMode" value="clinique"> clinique</label>
-  </div>
-
-  <!-- ===================== ÉCRAN 1 : ACCUEIL SUJET ===================== -->
+  <!-- ===================== ÉCRAN 1 : PANNEAU DÉVELOPPEUR ===================== -->
   <section id="screen-setup" class="screen active">
-    <h1>Avant de commencer</h1>
-    <p class="version-line" id="modeLine">Test court — environ 5 minutes</p>
+    <h1>Version développeur</h1>
+    <p class="version-line">Passation automatique — réponses simulées</p>
 
     <div class="vigilance" role="note">
-      <p class="vigilance-title">Version en cours de développement</p>
-      <p>Ce test est un <strong>prototype de recherche</strong>, encore en cours de mise au point.
-      Ce n'est pas un examen médical : les résultats affichés à la fin ne constituent
-      <strong>ni un diagnostic, ni une évaluation de votre audition</strong>, et ne doivent pas être
-      interprétés comme tels.</p>
-      <p>Si vous ressentez une gêne auditive, parlez-en à un médecin ou à un service d'audiologie.</p>
+      <p class="vigilance-title">Page de mise au point</p>
+      <p>Cette page <strong>simule les réponses</strong> d'un sujet pour dérouler un test entier en quelques
+      secondes et voir les écrans de fin. Elle ne mesure rien et ne doit jamais servir à une vraie passation :
+      pour cela, ouvrir <code>index.html</code> (examinateur) ou <code>patient.html</code> (sujet).</p>
+    </div>
 
-      <label class="ack" for="ackDev">
-        <input type="checkbox" id="ackDev">
-        <span>J'ai lu et compris qu'il s'agit d'une version en cours de développement, dont les
-        résultats n'ont pas de valeur diagnostique.</span>
-      </label>
-      <p class="field-error" id="ackDevError">Merci de cocher cette case avant de commencer.</p>
+    <!-- Paramètres lus par readConfig() dans app.js. Le panneau ci-dessous écrit dedans. -->
+    <div hidden id="fixedConfig">
+      <input type="text" id="participantId" value="DEV">
+      <select id="targetCallsign"><option value="Delta">Delta</option></select>
+      <label><input type="radio" name="noiseType" value="corpus" checked> corpus</label>
+      <label><input type="radio" name="noiseType" value="standard"> standard</label>
+      <label><input type="radio" name="noisePresentation" value="continu"> continu</label>
+      <label><input type="radio" name="noisePresentation" value="declenche" checked> déclenché</label>
+      <input type="number" id="numTrials" value="32">
+      <input type="number" id="practiceTrials" value="6">
+      <input type="number" id="practiceSnrStart" value="6">
+      <label><input type="radio" name="testMode" value="depistage"> dépistage</label>
+      <label><input type="radio" name="testMode" value="clinique" checked> clinique</label>
     </div>
 
     <div class="card">
-      <h2>Identification</h2>
-      <label for="participantId">Vos initiales ou votre numéro de participant
-        <input type="text" id="participantId" required maxlength="20"
-               placeholder="ex. GA ou 042"
-               autocomplete="off" autocapitalize="characters" spellcheck="false">
-      </label>
-      <p class="field-error" id="participantIdError">Merci d'indiquer vos initiales ou votre numéro avant de commencer.</p>
+      <h2>Dérouler un test</h2>
+      <p class="hint">Le protocole complet est joué : entraînement, puis les séries, avec des réponses
+      choisies pour atteindre le résultat demandé.</p>
+      <button id="btnRunNormal" class="btn-primary" style="width:100%">▶ Test clinique — résultat <strong>NORMAL</strong></button>
+      <button id="btnRunAbnormal" class="btn-primary" style="width:100%;margin-top:10px">▶ Test clinique — résultat <strong>ANORMAL</strong></button>
+      <p class="hint" id="devScenarios"></p>
     </div>
 
     <div class="card">
-      <p class="patient-lead">Vous allez entendre une voix d'homme dans du bruit.
-      À chaque essai, elle prononce un <strong>indicatif d'appel</strong>, puis une
-      <strong>couleur</strong> et un <strong>chiffre</strong>.</p>
-
-      <p class="patient-lead" style="margin-bottom:6px">Votre indicatif est :</p>
-      <div class="callsign-badge">DELTA</div>
-
-      <ol class="steps">
-        <li>Mettez le casque et installez-vous au calme.</li>
-        <li>Écoutez la phrase jusqu'au bout, puis touchez la case de la
-            <strong>couleur</strong> entendue portant le <strong>chiffre</strong> entendu.</li>
-        <li>C'est volontairement difficile : le bruit est fort et vous n'entendrez pas tout.
-            <strong>Répondez à chaque essai</strong>, au hasard s'il le faut — ne laissez jamais passer un essai.</li>
-      </ol>
+      <h2>Options</h2>
+      <div class="field-row">
+        <label>Protocole
+          <select id="devMode">
+            <option value="clinique" selected>Clinique — 3 séries</option>
+            <option value="depistage">Dépistage</option>
+          </select>
+        </label>
+        <label>Vue
+          <select id="devView">
+            <option value="examinateur" selected>Examinateur</option>
+            <option value="sujet">Sujet (paramètres masqués)</option>
+          </select>
+        </label>
+      </div>
+      <div class="field-row">
+        <label>Rythme
+          <select id="devSpeed">
+            <option value="0" selected>Instantané</option>
+            <option value="120">Rapide (0,12 s/essai)</option>
+            <option value="600">Lent (0,6 s/essai)</option>
+            <option value="real">Temps réel, avec le son</option>
+          </select>
+        </label>
+        <label>Essais par série <input type="number" id="devNumTrials" value="32" min="1" max="256"></label>
+        <label>Entraînement <input type="number" id="devPractice" value="6" min="0" max="20"></label>
+      </div>
+      <p class="hint">En « temps réel », le son est joué et la durée est celle d'une vraie passation
+      (environ 6 s par essai) ; sinon l'audio n'est pas lu du tout. Avec peu d'essais par série, les
+      proportions visées sont arrondies : le SRT obtenu peut s'écarter de la valeur annoncée, voire
+      devenir indéterminé si une série tombe à 0 % ou 100 %.</p>
     </div>
 
     <div class="card">
-      <h2>Déroulement</h2>
-      <p class="hint">Le test se fait en deux temps, dans cet ordre.</p>
-      <ol class="phases">
-        <li>
-          <span class="phase-num">1</span>
-          <div>
-            <strong>Entraînement — 6 essais, qui ne comptent pas.</strong>
-            Ils commencent facilement, puis <strong>le bruit devient de plus en plus gênant</strong>
-            jusqu'au niveau de la mesure. C'est le moment de vous habituer à la tâche : répondez
-            à chaque essai, mais vos réponses ne sont pas enregistrées.
-          </div>
-        </li>
-        <li data-mode="depistage">
-          <span class="phase-num">2</span>
-          <div>
-            <strong>Mesure — 32 essais, environ 5 minutes.</strong>
-            Un écran vous dira comment s'est passé l'entraînement et vous préviendra qu'il est
-            terminé ; c'est vous qui lancerez la mesure quand vous serez prêt. À partir de là, <strong>vos réponses comptent</strong>,
-            et le bruit reste au même niveau du premier au dernier essai.
-            Selon vos réponses, <strong>deux séries complémentaires</strong> de 32 essais, à d'autres
-            niveaux de bruit, peuvent être nécessaires (environ 10 minutes de plus) ; un écran vous
-            le dira le moment venu.
-          </div>
-        </li>
-        <li data-mode="clinique" hidden>
-          <span class="phase-num">2</span>
-          <div>
-            <strong>Mesure — 3 séries de 32 essais, environ 15 minutes.</strong>
-            Un écran vous dira comment s'est passé l'entraînement et vous préviendra qu'il est
-            terminé ; c'est vous qui lancerez la mesure quand vous serez prêt. À partir de là, <strong>vos réponses comptent</strong>.
-            Le niveau de bruit reste le même pendant toute une série et <strong>change d'une série à
-            l'autre</strong> ; une courte pause est prévue entre deux séries.
-          </div>
-        </li>
-      </ol>
+      <h2>Journal</h2>
+      <pre id="devLog" class="dev-log">Prêt.</pre>
     </div>
 
-    <div class="card">
-      <h2>Réglage du volume</h2>
-      <p class="hint">Lancez le bruit et réglez le volume de l'appareil à un niveau
-      <strong>confortable</strong>. Une fois le test commencé, ne touchez plus au volume.</p>
-      <button id="btnVolume" class="btn-secondary" style="display:block;width:100%">▶ Écouter le bruit</button>
-    </div>
-
-    <button id="btnStart" class="btn-primary">Commencer</button>
-
-    <p class="disclaimer">Version autonome : 32 phrases (indicatif Delta) et les deux bruits sont embarqués dans ce fichier — aucun dossier audio ni serveur nécessaire. Générée par build_standalone.py depuis webapp-v4/.<br>Prototype de recherche — ceci n'est pas un dispositif médical calibré.</p>
+    <p class="disclaimer">Version autonome : 32 phrases (indicatif Delta) et les deux bruits sont embarqués dans ce fichier — aucun dossier audio ni serveur nécessaire. Générée par build_standalone.py depuis webapp-v4/.<br>Prototype de recherche — page de mise au point, réponses simulées.</p>
   </section>
 
   <!-- ===================== ÉCRAN 2 : TEST ===================== -->
@@ -979,6 +942,8 @@ ol.phases li + li { border-top: 1px solid var(--line, rgba(255,255,255,0.12)); }
     <div class="practice-meter" id="practiceMeter" style="display:none"></div>
     <div class="live-score" id="liveScore"></div>
 
+    <!-- Écran d'annonce de la page sujet : présent ici pour que la vue « sujet »
+         montre exactement ce que voit le sujet entre deux séries. -->
     <div class="phase-gate" id="phaseGate" hidden>
       <p class="phase-gate-kicker" id="phaseGateKicker">Fin de l'entraînement</p>
       <h2 id="phaseGateTitle">La mesure commence</h2>
@@ -990,26 +955,22 @@ ol.phases li + li { border-top: 1px solid var(--line, rgba(255,255,255,0.12)); }
 
     <div class="listen-zone">
       <button id="btnPlay" class="btn-play">▶ Écouter la phrase</button>
-      <!-- pas de bouton de réécoute ici : le sujet entend chaque phrase une seule fois -->
+      <button id="btnReplay" class="btn-secondary" style="display:none">↺ Réécouter (1 fois)</button>
     </div>
 
-    <p class="instruction">Touchez la couleur et le chiffre entendus après l'indicatif <strong id="callsignReminder"></strong>.</p>
+    <p class="instruction">Réponses simulées — indicatif <strong id="callsignReminder"></strong>.</p>
 
     <div id="grid" class="grid"></div>
 
-    <button id="btnStopPatient" class="btn-link examiner-link">Interrompre le test (examinateur)</button>
+    <button id="btnStop" class="btn-link">Arrêter le test</button>
+    <button id="btnDevAbort" class="btn-link">⏹ Interrompre la simulation</button>
   </section>
 
   <!-- ===================== ÉCRAN 3 : RÉSULTATS ===================== -->
   <section id="screen-results" class="screen">
     <h1>Résultats</h1>
-    <div class="vigilance" role="note">
-      <p>Résultats obtenus avec une <strong>version en cours de développement</strong> : ils n'ont
-      aucune valeur diagnostique et ne remplacent pas un bilan auditif réalisé par un professionnel.</p>
-    </div>
+    <p class="version-line">Passation automatique — réponses simulées</p>
     <div id="resultsConclusion" class="card"></div>
-    <!-- Le rapport « zone d'éligibilité » n'est rendu que côté examinateur
-         (il est plein de décibels) : le conteneur reste vide ici. -->
     <div id="resultsEligibility" class="elig-report"></div>
     <div id="resultsNormality" class="card"></div>
     <div id="resultsSummary" class="card"></div>
@@ -3641,70 +3602,176 @@ async function verifOfflineAnalysis() {
 
 </script>
 <script>
-/* Spécifique à la page patient : réglage du volume, identifiant passé par
-   l'URL (côté examinateur), et confirmation avant d'interrompre le test. */
-(function patientPage() {
-  // patient.html?id=P01 — préremplit le champ quand l'examinateur lance le test
-  // lui-même ; le sujet peut le saisir ou le corriger directement sur la page.
-  const params = new URLSearchParams(location.search);
-  const pid = params.get("id");
-  if (pid) $("#participantId").value = pid;
+/* ================================================================================
+   Pilote de passation automatique (page développeur uniquement).
 
-  // patient.html?mode=clinique — les trois séries, pour estimer le seuil. Sans
-  // paramètre (ou valeur inconnue) : dépistage. Le sujet ne choisit pas lui-même ;
-  // la page affiche le mode retenu pour que l'examinateur vérifie le bon lien.
-  const mode = params.get("mode") === "clinique" ? "clinique" : "depistage";
-  $all('#fixedConfig input[name="testMode"]').forEach(r => { r.checked = (r.value === mode); });
-  $all("[data-mode]").forEach(el => { el.hidden = (el.dataset.mode !== mode); });
-  $("#modeLine").textContent = mode === "clinique"
-    ? "Test complet — environ 15 minutes"
-    : "Test court — environ 5 minutes";
+   Il ne modifie pas le protocole : il joue le rôle du sujet. Les réponses sont
+   choisies pour que chaque série atteigne une proportion de bonnes réponses
+   donnée, réparties régulièrement sur les essais. En dehors du mode « temps
+   réel », l'audio n'est pas lu : playCurrentTrial() et afterTrial() sont
+   remplacés le temps de la simulation, puis rendus à app.js.
+   ================================================================================ */
+(function devPage() {
+  // Proportions visées par série. Sur 32 essais : NORMAL 25 / 14 / 30,
+  // ANORMAL 6 / 1 / 17 (SRT -11,5 dB et -6,3 dB, soit -0,4 et +4,8 dB par
+  // rapport à la norme). Elles sont exprimées en proportions pour rester
+  // valables si l'on change le nombre d'essais par série.
+  const SCENARIOS = {
+    normal: {
+      titre: "NORMAL",
+      cible: { main: 25 / 32, c12: 14 / 32, c6: 30 / 32 },
+      attendu: "SRT ≈ -11,5 dB (écart -0,4 dB) — dans la marge de 3 dB",
+    },
+    anormal: {
+      titre: "ANORMAL",
+      cible: { main: 6 / 32, c12: 1 / 32, c6: 17 / 32 },
+      attendu: "SRT ≈ -6,3 dB (écart +4,8 dB) — au-delà de la marge de 3 dB",
+    },
+  };
 
-  on("#participantId", "input", () => {
-    $("#participantIdError").style.display = "none";
-  });
+  const ORIG = { playCurrentTrial, afterTrial };
+  let running = false, abort = false;
 
-  // Le test ne démarre pas tant que le message de vigilance n'est pas acquitté.
-  addStartGuard(() => {
-    const box = $("#ackDev");
-    if (box.checked) return true;
-    $("#ackDevError").style.display = "block";
-    box.focus();
-    return false;
-  });
-  on("#ackDev", "change", () => {
-    if ($("#ackDev").checked) $("#ackDevError").style.display = "none";
-  });
+  const log = (msg) => {
+    const el = $("#devLog");
+    const t = new Date().toLocaleTimeString("fr-FR", { hour12: false });
+    el.textContent = (el.textContent === "Prêt." ? "" : el.textContent + "\n") + `${t}  ${msg}`;
+    el.scrollTop = el.scrollHeight;
+  };
 
-  // Nouvelle passation : on repart d'une page vierge pour le sujet suivant,
-  // sans son identifiant ni l'acquittement du précédent.
-  on("#btnRestart", "click", () => {
-    $("#participantId").value = "";
-    $("#ackDev").checked = false;
-    $("#participantIdError").style.display = "none";
-    $("#ackDevError").style.display = "none";
-  });
+  // Répartition régulière des bonnes réponses sur une série (algorithme de
+  // Bresenham) : k bonnes réponses sur n essais, sans les grouper au début.
+  const estJuste = (i, k, n) => Math.floor((i + 1) * k / n) > Math.floor(i * k / n);
 
-  let volumeEl = null;
-  function stopVolume() {
-    if (volumeEl) { try { volumeEl.pause(); } catch (e) {} volumeEl = null; }
-    const b = $("#btnVolume");
-    if (b) b.textContent = "▶ Écouter le bruit";
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+  function stubAudio(pas) {
+    playCurrentTrial = async function () {
+      const entry = pickStimulus(state.config.callsign);
+      state.currentTrial = { entry, snr: state.pendingSnr, levels: state.pendingLevels };
+      state.trialStartTime = performance.now();
+      setGridEnabled(true);
+      return entry;
+    };
+    afterTrial = (fn) => setTimeout(fn, pas);
   }
-  on("#btnVolume", "click", () => {
-    if (volumeEl) { stopVolume(); return; }
-    volumeEl = new Audio(audioUrl(NOISE_FILES.standard));
-    volumeEl.loop = true;
-    volumeEl.play().catch(err => console.error("lecture impossible:", err));
-    $("#btnVolume").textContent = "■ Arrêter le bruit";
-  });
-  on("#btnStart", "click", stopVolume);
+  function restoreAudio() {
+    playCurrentTrial = ORIG.playCurrentTrial;
+    afterTrial = ORIG.afterTrial;
+  }
 
-  // bouton d'arrêt réservé à l'examinateur : id distinct de #btnStop pour que
-  // app.js ne le câble pas directement, et confirmation avant d'interrompre
-  on("#btnStopPatient", "click", () => {
-    if (confirm("Interrompre le test en cours ?")) finishTest();
+  function appliquerOptions(mode) {
+    $("#numTrials").value = String(Math.max(1, parseInt($("#devNumTrials").value, 10) || 32));
+    $("#practiceTrials").value = String(Math.max(0, parseInt($("#devPractice").value, 10) || 0));
+    $all('#fixedConfig input[name="testMode"]').forEach(r => { r.checked = (r.value === mode); });
+    const sujet = $("#devView").value === "sujet";
+    document.body.toggleAttribute("data-hide-parameters", sujet);
+    // L'écran d'annonce n'existe que sur la page sujet : en vue examinateur on
+    // le débranche (showPhaseGate() ne trouve plus #phaseGate et enchaîne), pour
+    // que la simulation suive exactement l'écran de la page correspondante.
+    const gate = $("#phaseGate") || document.querySelector("#phaseGateOff");
+    if (gate) { gate.id = sujet ? "phaseGate" : "phaseGateOff"; gate.hidden = true; }
+    // Le sujet n'a pas de bouton de réécoute : on le retire pour que la vue
+    // « sujet » corresponde vraiment à patient.html.
+    setDisplay("#btnReplay", sujet ? "none" : "");
+  }
+
+  async function run(nom) {
+    if (running) return;
+    running = true; abort = false;
+    const sc = SCENARIOS[nom];
+    const mode = $("#devMode").value;
+    const reel = $("#devSpeed").value === "real";
+    const pas = reel ? 0 : parseInt($("#devSpeed").value, 10);
+    appliquerOptions(mode);
+    if (!reel) stubAudio(pas);
+    else {
+      restoreAudio();
+      // Le contexte audio doit être créé pendant le clic : plus tard dans la
+      // boucle, le navigateur ne considère plus l'interaction comme active.
+      try { await ensureAudioCtx(); } catch (e) { log("⚠ audio indisponible : " + e.message); }
+    }
+
+    const n = parseInt($("#numTrials").value, 10);
+    const cibles = {};
+    for (const [k, p] of Object.entries(sc.cible)) cibles[k] = Math.round(p * n);
+    log(`▶ ${sc.titre} — protocole ${mode}, ${n} essais par série, ` +
+        `vue ${$("#devView").value}, ${reel ? "temps réel avec son" : (pas ? pas + " ms/essai" : "instantané")}`);
+    log(`   scores visés : ${Object.entries(cibles).map(([k, v]) => `${k} ${v}/${n}`).join(", ")}`);
+    const t0 = performance.now();
+
+    startSession();
+
+    let vus = 0, gardeFou = 0;
+    while (!abort && gardeFou++ < 200000) {
+      await sleep(reel ? 60 : 0);
+      if ($("#screen-results").classList.contains("active")) break;
+
+      const gate = $("#phaseGate");
+      if (gate && !gate.hidden) {
+        log(`   écran de pause : « ${$("#phaseGateKicker").textContent} »`);
+        await sleep(reel ? 1200 : Math.max(pas, 150));
+        if (abort) break;
+        $("#btnPhaseGate").click();
+        continue;
+      }
+      const play = $("#btnPlay");
+      if (play.style.display !== "none" && !play.disabled && !state.audioUnlocked) { play.click(); continue; }
+
+      const btns = $all(".grid-btn");
+      if (!state.currentTrial || !btns.length || btns[0].disabled) continue;
+
+      const phase = state.phases[state.phaseIdx];
+      const juste = state.pendingIsPractice
+        ? true                                   // l'entraînement est réussi : bilan « c'est compris »
+        : estJuste(state.trialIndex, cibles[phase.key] ?? 0, n);
+      const e = state.currentTrial.entry;
+      const cible = juste
+        ? btns.find(b => b.dataset.color === e.color && +b.dataset.number === e.number)
+        : btns.find(b => b.dataset.color !== e.color && +b.dataset.number !== e.number);
+      // Hors temps réel, les clics sont instantanés : on antidate le début de
+      // l'essai pour que les temps de réponse enregistrés restent plausibles.
+      // Le chronomètre part au début de la phrase (≈ 2,3 s) et le sujet répond
+      // ensuite : 3 à 5,5 s au total.
+      if (!reel) state.trialStartTime = performance.now() - (3000 + Math.random() * 2500);
+      cible.click();
+      if (++vus % 32 === 0) log(`   ${vus} essais joués…`);
+    }
+
+    restoreAudio();
+    running = false;
+    if (abort) { log("⏹ simulation interrompue"); return; }
+
+    const dt = ((performance.now() - t0) / 1000).toFixed(1);
+    log(`✔ terminé en ${dt} s — conclusion « ${state.finalConclusion} »` +
+        (state.snr50 === null || state.snr50 === undefined ? "" : `, SRT ${state.snr50.toFixed(2)} dB ` +
+         `(écart ${(state.snr50 - NORM_SRT >= 0 ? "+" : "") + (state.snr50 - NORM_SRT).toFixed(2)} dB)`));
+    state.phaseHistory.forEach(p => log(`   ${p.label} (${p.snr} dB) : ${p.correct}/${p.total}`));
+    log(`   attendu : ${sc.attendu}`);
+  }
+
+  function majScenarios() {
+    const n = Math.max(1, parseInt($("#devNumTrials").value, 10) || 32);
+    const fmt = (sc) => Object.entries(sc.cible)
+      .map(([k, p]) => `${({ main: "-9", c12: "-12", c6: "-6" })[k]} dB : ${Math.round(p * n)}/${n}`).join(" · ");
+    $("#devScenarios").innerHTML =
+      `NORMAL — ${fmt(SCENARIOS.normal)} (${SCENARIOS.normal.attendu}).<br>` +
+      `ANORMAL — ${fmt(SCENARIOS.anormal)} (${SCENARIOS.anormal.attendu}).` +
+      (($("#devMode") || {}).value === "depistage"
+        ? "<br>En dépistage, seules les séries nécessaires sont passées."
+        : "");
+  }
+
+  on("#btnRunNormal", "click", () => run("normal"));
+  on("#btnRunAbnormal", "click", () => run("anormal"));
+  on("#devNumTrials", "input", majScenarios);
+  on("#devMode", "change", majScenarios);
+  on("#btnDevAbort", "click", () => { abort = true; });
+  on("#btnRestart", "click", () => {
+    $("#devLog").textContent = "Prêt.";
+    $("#trialCounter").textContent = "";     // sinon le panneau garde « Essai 32 / 32 »
   });
+  majScenarios();
 })();
 </script>
 </body>

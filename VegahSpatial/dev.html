@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VegahSpatial — développeur</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--mut:#667085;--line:#d9dde5;--acc:#2b6cb0;--T:#1f7a4d;--M:#c2410c;--ok:#1f7a4d;--ko:#b42318}
+@media (prefers-color-scheme:dark){:root{--bg:#12151b;--card:#1a1f29;--ink:#e8ebf1;--mut:#9aa4b5;--line:#2c3442;--acc:#6aa7f0;--T:#4cc38a;--M:#f08a52;--ok:#4cc38a;--ko:#f07167}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,system-ui,"Segoe UI",sans-serif}
+header{padding:14px 20px;border-bottom:1px solid var(--line);background:var(--card);display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+header h1{font-size:18px;margin:0}
+header .tag{font-size:12px;color:var(--mut)}
+.warn{margin:12px 20px 0;padding:10px 12px;border:1px solid #d9a441;background:#fff7e0;color:#5b4300;border-radius:8px;font-size:13px}
+@media (prefers-color-scheme:dark){.warn{background:#3a2f12;color:#f2d99a;border-color:#7a5f1c}}
+main{display:grid;grid-template-columns:minmax(320px,440px) 1fr;gap:14px;padding:14px 20px 40px;align-items:start}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card h2{font-size:13px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+label{display:block;font-size:13px;color:var(--mut);margin:8px 0 3px}
+label.inl{display:flex;gap:8px;align-items:center;color:var(--ink);margin:6px 0}
+input[type=number],input[type=text],select{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+button{font:inherit;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+button.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.small{font-size:12px;color:var(--mut)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+#space{width:100%;max-width:420px;touch-action:none;display:block;margin:0 auto;user-select:none;-webkit-user-select:none;cursor:crosshair}
+#space .ring{fill:none;stroke:var(--line);stroke-width:1.5;stroke-dasharray:3 4}
+#space .tick{stroke:var(--mut);stroke-width:1}
+#space text{fill:var(--mut);font-size:10px;text-anchor:middle;dominant-baseline:middle}
+#space .head{fill:var(--card);stroke:var(--ink);stroke-width:1.5}
+#space [data-h]{cursor:grab}
+#space [data-h] text{fill:#fff;font-size:12px;font-weight:700;pointer-events:none}
+.legend{display:flex;gap:16px;justify-content:center;font-size:12px;color:var(--mut);margin-top:6px;flex-wrap:wrap}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.sepbox{text-align:center;font-size:13px;margin-top:6px}
+.scale{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin:0 2px 4px}
+#status{min-height:1.4em;font-size:13px;color:var(--mut);margin:10px 0 4px}
+#info{font-size:13px;margin:6px 0}
+#fb{font-weight:600;min-height:1.4em;margin-top:8px}
+#fb.ok{color:var(--ok)} #fb.ko{color:var(--ko)}
+.grow{display:flex;gap:5px;align-items:center;margin:4px 0;flex-wrap:wrap}
+.glab{width:52px;font-size:12px;color:var(--mut)}
+.cell{width:38px;height:38px;padding:0;font-weight:700}
+.c-bleu{background:#2f6fd0;color:#fff;border-color:#2f6fd0}
+.c-jaune{background:#f2c200;color:#222;border-color:#d9ae00}
+.c-rouge{background:#d63a3a;color:#fff;border-color:#d63a3a}
+.c-vert{background:#2e9e4f;color:#fff;border-color:#2e9e4f}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;white-space:nowrap}
+th{color:var(--mut);font-weight:600}
+.scroll{overflow:auto;max-height:300px}
+details{margin-top:8px;font-size:13px}
+summary{cursor:pointer;color:var(--mut)}
+</style>
+</head>
+<body>
+<header>
+  <h1>VegahSpatial</h1>
+  <span class="tag">Version développeur · tâche CRM spatialisée · 1 masqueur · angle choisi à chaque essai</span>
+</header>
+<div class="warn"><b>Casque obligatoire.</b> La spatialisation utilise le filtre HRTF générique du navigateur (pas une HRTF individuelle) et le niveau acoustique n'est pas calibré. Outil de recherche en développement, pas un examen.</div>
+
+<main>
+  <div class="col">
+    <section class="card">
+      <h2>Position des sources (vue du dessus)</h2>
+      <svg id="space" viewBox="0 0 320 320" role="img" aria-label="Plan horizontal vu du dessus : clique ou glisse pour placer les sources">
+        <circle class="ring" cx="160" cy="160" r="105"/>
+        <g id="ticks"></g>
+        <polygon class="head" points="160,136 153,143 167,143"/>
+        <circle class="head" cx="160" cy="160" r="18"/>
+        <ellipse class="head" cx="141" cy="160" rx="3" ry="6"/>
+        <ellipse class="head" cx="179" cy="160" rx="3" ry="6"/>
+        <line id="lineT" x1="160" y1="160" x2="160" y2="55" stroke="var(--T)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line id="lineM" x1="160" y1="160" x2="160" y2="55" stroke="var(--M)" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <g data-h="T" id="hT"><circle r="13" fill="var(--T)" stroke="var(--ink)"/><text>C</text></g>
+        <g data-h="M" id="hM"><circle r="13" fill="var(--M)" stroke="var(--ink)"/><text>M</text></g>
+      </svg>
+      <div class="legend">
+        <span><span class="dot" style="background:var(--T)"></span>Cible (C)</span>
+        <span><span class="dot" style="background:var(--M)"></span>Masqueur (M)</span>
+        <span>Distance à l'auditeur identique et constante</span>
+      </div>
+      <div class="sepbox">Séparation cible–masqueur : <b id="sep">90°</b> · 0° = droit devant, +90° = droite, −90° = gauche, 180° = derrière</div>
+
+      <label class="inl" style="margin-top:12px"><input type="checkbox" id="sym" checked> mode symétrique par rapport au droit devant (0°)</label>
+      <div id="symBox">
+        <label for="sepRange">Distance angulaire cible–masqueur : <b id="sepVal">90°</b></label>
+        <input type="range" id="sepRange" min="0" max="180" step="5" value="90" style="width:100%">
+        <div class="scale"><span>0°</span><span>45°</span><span>90°</span><span>135°</span><span>180°</span></div>
+        <label for="side">Côté de la cible</label>
+        <select id="side">
+          <option value="L">Cible à gauche · masqueur à droite</option>
+          <option value="R">Cible à droite · masqueur à gauche</option>
+        </select>
+        <div class="row" style="margin-top:8px">
+          <button data-sep="0">0°</button><button data-sep="30">30°</button><button data-sep="60">60°</button>
+          <button data-sep="90">90°</button><button data-sep="120">120°</button><button data-sep="180">180°</button>
+        </div>
+      </div>
+      <div id="freeBox" class="small" style="margin-top:8px">Mode libre : tu places la cible et le masqueur n'importe où sur le cercle (pastilles ou champs ci-dessous).</div>
+      <div class="row" style="margin-top:10px" id="actRow">
+        <label class="inl"><input type="radio" name="act" value="T"> déplacer la cible</label>
+        <label class="inl"><input type="radio" name="act" value="M" checked> déplacer le masqueur</label>
+      </div>
+      <div class="two">
+        <div><label for="azT">Angle cible (°)</label><input type="number" id="azT" min="-180" max="180" step="0.5" value="-45"></div>
+        <div><label for="azM">Angle masqueur (°)</label><input type="number" id="azM" min="-180" max="180" step="0.5" value="45"></div>
+      </div>
+      <label for="snap">Pas d'accrochage</label>
+      <select id="snap">
+        <option value="1">1°</option><option value="5" selected>5°</option><option value="10">10°</option>
+        <option value="15">15°</option><option value="30">30°</option>
+      </select>
+    </section>
+
+    <section class="card">
+      <h2>Paramètres de l'essai</h2>
+      <div class="two">
+        <div><label for="snr">SNR cible/masqueur (dB)</label><input type="number" id="snr" step="0.5" value="0"></div>
+        <div><label for="lead">Avance du masqueur (ms)</label><input type="number" id="lead" min="0" step="50" value="0"></div>
+      </div>
+      <label for="master">Niveau général (dB)</label>
+      <input type="range" id="master" min="-40" max="10" step="1" value="0" style="width:100%">
+      <div class="small" id="masterTxt"></div>
+      <label class="inl"><input type="checkbox" id="loopM" checked> boucler le masqueur s'il est plus court que la cible</label>
+      <label class="inl"><input type="checkbox" id="diffTalker" checked> préférer un masqueur d'un autre locuteur</label>
+      <label class="inl"><input type="checkbox" id="rndM"> tirer au hasard à chaque essai la distance angulaire (mode symétrique) ou l'angle du masqueur (mode libre)</label>
+      <input type="text" id="rndList" value="0,30,60,90,120,180" aria-label="Valeurs possibles, en degrés">
+      <label class="inl"><input type="checkbox" id="rndSide"> inverser au hasard gauche/droite à chaque essai</label>
+      <label class="inl"><input type="checkbox" id="hideId" checked> masquer l'identité des phrases avant la réponse</label>
+      <label class="inl"><input type="checkbox" id="chain"> enchaîner les essais sans attendre de réponse</label>
+      <div class="two">
+        <div><label for="gap">Pause entre essais (ms)</label><input type="number" id="gap" min="0" step="100" value="1000"></div>
+        <div><label for="chainN">Nombre d'essais (0 = jusqu'à Stop)</label><input type="number" id="chainN" min="0" step="1" value="0"></div>
+      </div>
+      <label for="pid">Identifiant participant</label>
+      <input type="text" id="pid" maxlength="20" placeholder="ex. P01">
+      <div class="small" style="margin-top:8px">SNR = niveau RMS de la cible moins celui du masqueur, mesurés sur les signaux d'origine avant spatialisation (chaque fichier est d'abord ramené au même RMS).</div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card">
+      <h2>Corpus</h2>
+      <div class="row">
+        <button id="pickDirBtn">Choisir le dossier du corpus…</button>
+        <button id="pickFilesBtn">Choisir des fichiers…</button>
+        <input type="file" id="pickDir" webkitdirectory directory multiple hidden>
+        <input type="file" id="pickFiles" accept="audio/*,.wav,.mp3" multiple hidden>
+      </div>
+      <div class="small" id="corpusInfo" style="margin-top:8px">Aucun fichier chargé.</div>
+      <label for="tcs">Indicatif de la cible</label>
+      <select id="tcs"></select>
+      <details>
+        <summary>Reconnaissance des noms de fichiers</summary>
+        <p class="small">Par défaut, l'indicatif, la couleur (bleu, jaune, rouge, vert) et le chiffre (1–8) sont déduits du nom du fichier ; le dossier parent sert de locuteur. Si ça ne convient pas, saisis une expression régulière avec les groupes nommés <span class="mono">callsign</span>, <span class="mono">color</span>, <span class="mono">number</span> et (facultatif) <span class="mono">talker</span>.</p>
+        <input type="text" id="rx" class="mono" placeholder="ex. (?&lt;talker&gt;T\d+)_(?&lt;callsign&gt;[a-z]+)_(?&lt;color&gt;[a-z]+)_(?&lt;number&gt;\d)">
+        <div class="row" style="margin-top:6px"><button id="btnReparse">Réanalyser</button></div>
+        <div class="small mono" id="parseList" style="margin-top:8px"></div>
+      </details>
+    </section>
+
+    <section class="card">
+      <h2>Essai</h2>
+      <div class="row">
+        <button id="btnPlay" class="primary">▶ Nouvel essai</button>
+        <button id="btnReplay" disabled>↻ Réécouter (angles actuels)</button>
+        <button id="btnStop" disabled>■ Stop</button>
+        <button id="btnSynth">Test de spatialisation (bruits)</button>
+      </div>
+      <div id="status"></div>
+      <div id="info"></div>
+      <div id="grid" aria-label="Grille de réponse"></div>
+      <div id="fb" aria-live="polite"></div>
+    </section>
+
+    <section class="card">
+      <h2>Résultats</h2>
+      <div id="sum"></div>
+      <div class="scroll" style="margin-top:10px">
+        <table id="logTable">
+          <thead><tr><th>#</th><th>Cible</th><th>Masqueur</th><th>Az C</th><th>Az M</th><th>Δ</th><th>SNR</th><th>Réponse</th><th>OK</th><th>TR (ms)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="btnCsv" disabled>Exporter en CSV</button>
+        <button id="btnClear" disabled>Vider le journal</button>
+      </div>
+      <div class="small" style="margin-top:6px">CSV en UTF-8, séparateur point-virgule. Le temps de réponse est compté depuis la fin de la lecture.</div>
+    </section>
+  </div>
+</main>
+
+<script>
+(function(){
+'use strict';
+const $ = s => document.querySelector(s);
+const COLORS = {bleu:'bleu', blue:'bleu', jaune:'jaune', yellow:'jaune', rouge:'rouge', red:'rouge', vert:'vert', green:'vert'};
+const COLOR_LIST = ['bleu','jaune','rouge','vert'];
+const NUMS = [1,2,3,4,5,6,7,8];
+const AUDIO_EXT = /\.(wav|mp3|ogg|flac|m4a|aac)$/i;
+const REF_RMS = 0.05;   // RMS de référence (-26 dBFS) avant niveau général
+
+let rawFiles = [], corpus = [];
+const cache = new Map();
+let ctx = null, sources = [], playToken = 0;
+let phase = 'idle', cur = null, log = [], trialNo = 0;
+const az = {T:-45, M:45};
+let symOn = true;
+let active = 'M', drag = null;
+let chainRun = false, chainCount = 0, gapTimer = null;
+
+/* ---------- utilitaires ---------- */
+const wrap = a => { a = ((a + 180) % 360 + 360) % 360 - 180; return a === -180 ? 180 : a; };
+const sepOf = (a, b) => Math.abs(wrap(a - b));
+const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+const setStatus = s => { $('#status').textContent = s; };
+const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+
+/* ---------- corpus ---------- */
+function heuristic(e){
+  const segs = e.path.split('/');
+  const base = segs[segs.length - 1].replace(/\.[^.]+$/, '');
+  const toks = base.split(/[^A-Za-z0-9]+/).filter(Boolean);
+  let ci = -1;
+  toks.forEach((t, i) => { const c = COLORS[t.toLowerCase()]; if (c) { e.color = c; ci = i; } });
+  if (ci >= 0 && /^\d+$/.test(toks[ci + 1] || '')) e.number = parseInt(toks[ci + 1], 10);
+  else {
+    const d = toks.filter(t => /^\d+$/.test(t) && +t >= 1 && +t <= 8);
+    if (d.length) e.number = parseInt(d[d.length - 1], 10);
+  }
+  const talkerRx = /^(t|spk|speaker|loc|locuteur|talker|f|m|h|p)\d+$/i;
+  const alpha = toks.filter((t, i) => /^[A-Za-z]{2,}$/.test(t) && i !== ci && !talkerRx.test(t));
+  if (alpha.length) e.callsign = alpha[0].toLowerCase();
+  const tk = toks.find(t => talkerRx.test(t));
+  if (tk) e.talker = tk.toLowerCase();
+  else if (segs.length >= 2) e.talker = segs[segs.length - 2].toLowerCase();
+}
+function parseEntry(file){
+  const path = file.webkitRelativePath || file.name;
+  const e = {file, path, name:file.name, callsign:null, color:null, number:null, talker:null, ok:false};
+  const rx = $('#rx').value.trim();
+  if (rx) {
+    try {
+      const m = new RegExp(rx, 'i').exec(path);
+      if (m && m.groups) {
+        if (m.groups.callsign) e.callsign = m.groups.callsign.toLowerCase();
+        if (m.groups.color) e.color = COLORS[m.groups.color.toLowerCase()] || m.groups.color.toLowerCase();
+        if (m.groups.number) e.number = parseInt(m.groups.number, 10);
+        if (m.groups.talker) e.talker = m.groups.talker.toLowerCase();
+      }
+    } catch (err) { /* expression invalide : fichiers non reconnus */ }
+  } else heuristic(e);
+  e.ok = !!(e.callsign && COLOR_LIST.includes(e.color) && NUMS.includes(e.number));
+  return e;
+}
+function loadFiles(fileList){
+  rawFiles = Array.from(fileList).filter(f => AUDIO_EXT.test(f.name));
+  cache.clear();
+  reparse();
+}
+function reparse(){
+  corpus = rawFiles.map(parseEntry);
+  const ok = corpus.filter(e => e.ok);
+  const bad = corpus.filter(e => !e.ok);
+  const counts = new Map();
+  ok.forEach(e => counts.set(e.callsign, (counts.get(e.callsign) || 0) + 1));
+  const prev = $('#tcs').value;
+  const sel = $('#tcs'); sel.innerHTML = '';
+  [...counts.keys()].sort().forEach(k => {
+    const o = document.createElement('option'); o.value = k; o.textContent = cap(k) + ' (' + counts.get(k) + ')'; sel.appendChild(o);
+  });
+  if (counts.has(prev)) sel.value = prev; else if (counts.has('delta')) sel.value = 'delta';
+  $('#corpusInfo').textContent = rawFiles.length
+    ? rawFiles.length + ' fichiers audio · ' + ok.length + ' reconnus · ' + bad.length + ' non reconnus'
+    : 'Aucun fichier audio dans la sélection.';
+  const lines = [];
+  ok.slice(0, 5).forEach(e => lines.push('✓ ' + e.path + ' → ' + e.callsign + ' / ' + e.color + ' / ' + e.number + ' / loc. ' + (e.talker || '?')));
+  bad.slice(0, 5).forEach(e => lines.push('✗ ' + e.path));
+  $('#parseList').textContent = lines.join('\n');
+  $('#parseList').style.whiteSpace = 'pre-wrap';
+  if (rawFiles.length && !ok.length) setStatus('Aucun nom de fichier reconnu : ouvre « Reconnaissance des noms de fichiers » et ajuste l\'expression régulière.');
+  else setStatus('');
+}
+
+/* ---------- audio ---------- */
+function ensureCtx(){
+  if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; ctx = new AC(); }
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+function decode(ab){
+  return new Promise((res, rej) => {
+    const p = ctx.decodeAudioData(ab, res, rej);
+    if (p && p.catch) p.catch(rej);
+  });
+}
+async function getBuf(entry){
+  if (cache.has(entry.path)) return cache.get(entry.path);
+  ensureCtx();
+  const buf = await decode(await entry.file.arrayBuffer());
+  const n = buf.length, ch = buf.numberOfChannels, mono = new Float32Array(n);
+  for (let c = 0; c < ch; c++) { const d = buf.getChannelData(c); for (let i = 0; i < n; i++) mono[i] += d[i] / ch; }
+  let s = 0, pk = 0;
+  for (let i = 0; i < n; i++) { const v = mono[i]; s += v * v; const a = Math.abs(v); if (a > pk) pk = a; }
+  const mb = ctx.createBuffer(1, n, buf.sampleRate);
+  mb.copyToChannel(mono, 0);
+  const o = {buf: mb, rms: Math.sqrt(s / n) || 1e-9, peak: pk || 1e-9, dur: buf.duration};
+  cache.set(entry.path, o);
+  return o;
+}
+function mkPanner(deg){
+  const p = ctx.createPanner();
+  p.panningModel = 'HRTF'; p.distanceModel = 'linear';
+  p.refDistance = 1; p.maxDistance = 10; p.rolloffFactor = 0;
+  const a = deg * Math.PI / 180, x = Math.sin(a), z = -Math.cos(a);
+  if (p.positionX) { p.positionX.value = x; p.positionY.value = 0; p.positionZ.value = z; }
+  else p.setPosition(x, 0, z);
+  return p;
+}
+function stopAll(){
+  sources.forEach(s => { try { s.stop(); } catch (e) {} });
+  sources = [];
+}
+function chain(buf, deg, gain, when){
+  const s = ctx.createBufferSource(); s.buffer = buf;
+  const g = ctx.createGain(); g.gain.value = gain;
+  const p = mkPanner(deg);
+  s.connect(g); g.connect(p); p.connect(ctx.destination);
+  s.start(when);
+  return s;
+}
+function masterLin(){ return Math.pow(10, (+$('#master').value) / 20); }
+
+function playCurrent(){
+  const c = ensureCtx();
+  stopAll();
+  const t = cur;
+  t.azT = az.T; t.azM = az.M; t.snr = +$('#snr').value || 0;
+  const master = masterLin();
+  const lead = Math.max(0, +$('#lead').value || 0) / 1000;
+  let gT = REF_RMS / t.to.rms * master;
+  let gM = REF_RMS / t.mo.rms * master * Math.pow(10, -t.snr / 20);
+  const pk = t.to.peak * gT + t.mo.peak * gM;
+  let lim = 0;
+  if (pk > 0.98) { const k = 0.98 / pk; gT *= k; gM *= k; lim = -20 * Math.log10(k); }
+  const t0 = c.currentTime + 0.15;
+  const tStartM = t0, tStartT = t0 + lead, tEndT = tStartT + t.to.dur;
+  const sT = chain(t.to.buf, t.azT, gT, tStartT);
+  const sM = chain(t.mo.buf, t.azM, gM, tStartM);
+  if ($('#loopM').checked && t.mo.dur < (tEndT - tStartM)) { sM.loop = true; sM.stop(tEndT + 0.05); }
+  sources = [sT, sM];
+  const token = ++playToken;
+  const chained = chainRun;
+  let pending = 2;
+  const done = () => {
+    if (--pending > 0 || token !== playToken) return;
+    if (chained) {
+      if (!chainRun) return;
+      t.answered = true;
+      pushLog(t, null);
+      setInfo(); renderLog();
+      chainCount++;
+      const N = Math.max(0, parseInt($('#chainN').value, 10) || 0);
+      if (N && chainCount >= N) {
+        chainRun = false; setPhase('done');
+        setStatus('Série terminée : ' + chainCount + ' essais enchaînés.');
+        return;
+      }
+      const gap = Math.max(0, parseInt($('#gap').value, 10) || 0);
+      setPhase('gap');
+      setStatus('Essai ' + chainCount + (N ? '/' + N : '') + ' terminé · suivant dans ' + gap + ' ms (Stop pour arrêter).');
+      gapTimer = setTimeout(() => { gapTimer = null; if (chainRun) newTrial(); }, gap);
+      return;
+    }
+    setPhase(t.answered ? 'done' : 'answering');
+    t.tEnable = performance.now();
+    setStatus(t.answered ? 'Lecture terminée.' : 'Choisis la couleur et le chiffre de la phrase cible.');
+  };
+  sT.onended = done; sM.onended = done;
+  setPhase('playing');
+  setStatus('Lecture : cible ' + t.azT + '°, masqueur ' + t.azM + '°, SNR ' + t.snr + ' dB' + (lim ? ' · limitation de ' + lim.toFixed(1) + ' dB' : ''));
+  setInfo();
+}
+
+/* test synthétique */
+function noiseBuf(pattern){
+  const sr = ctx.sampleRate;
+  const last = pattern[pattern.length - 1];
+  const total = last[0] + last[1] + 0.05;
+  const b = ctx.createBuffer(1, Math.ceil(total * sr), sr);
+  const d = b.getChannelData(0);
+  let lp = 0;
+  pattern.forEach(([s0, du]) => {
+    const i0 = Math.floor(s0 * sr), i1 = Math.floor((s0 + du) * sr), f = Math.floor(0.01 * sr);
+    for (let i = i0; i < i1 && i < d.length; i++) {
+      lp = 0.7 * lp + 0.3 * (Math.random() * 2 - 1);
+      d[i] = lp * 0.5 * Math.min(1, (i - i0) / f, (i1 - i) / f);
+    }
+  });
+  return b;
+}
+function synthTest(){
+  const c = ensureCtx();
+  stopAll(); playToken++;
+  const g = 0.6 * masterLin();
+  const t0 = c.currentTime + 0.15;
+  const a = chain(noiseBuf([[0,.25],[.4,.25],[.8,.25]]), az.T, g, t0);
+  const b = chain(noiseBuf([[0,.6],[.8,.6]]), az.M, g, t0 + 1.6);
+  sources = [a, b];
+  setStatus('Test : 3 salves à l\'angle de la cible (' + az.T + '°), puis 2 salves longues à l\'angle du masqueur (' + az.M + '°).');
+}
+
+/* ---------- déroulement ---------- */
+function setPhase(p){
+  phase = p;
+  $('#btnPlay').disabled = (p === 'playing' || p === 'gap');
+  $('#btnReplay').disabled = !cur || p === 'playing' || p === 'gap';
+  $('#btnStop').disabled = !(p === 'playing' || p === 'gap');
+  document.querySelectorAll('.cell').forEach(b => b.disabled = (p !== 'answering'));
+}
+function setInfo(){
+  const box = $('#info');
+  if (!cur) { box.textContent = ''; return; }
+  const hide = $('#hideId').checked && !cur.answered;
+  const d = e => cap(e.callsign) + ' ' + e.color + ' ' + e.number + ' (' + e.name + ')';
+  box.textContent = hide
+    ? 'Essai ' + (trialNo + (cur.answered ? 0 : 1)) + ' · identité des phrases masquée jusqu\'à la réponse.'
+    : 'Cible : ' + d(cur.te) + ' · Masqueur : ' + d(cur.me);
+}
+async function newTrial(){
+  if (!corpus.some(e => e.ok)) { chainRun = false; setStatus('Aucun fichier exploitable : charge le corpus, ou utilise le test de spatialisation.'); return; }
+  const cs = $('#tcs').value;
+  const targets = corpus.filter(e => e.ok && e.callsign === cs);
+  if (!targets.length) { chainRun = false; setStatus('Aucune phrase pour cet indicatif.'); return; }
+  const te = rand(targets);
+  let ms = corpus.filter(e => e.ok && e.callsign !== te.callsign && e.color !== te.color && e.number !== te.number);
+  if ($('#diffTalker').checked && te.talker) { const m2 = ms.filter(e => e.talker !== te.talker); if (m2.length) ms = m2; }
+  if (!ms.length) { chainRun = false; setStatus('Aucun masqueur compatible (indicatif, couleur et chiffre différents de la cible).'); return; }
+  const me = rand(ms);
+  if ($('#rndM').checked) {
+    const list = $('#rndList').value.split(/[,;\s]+/).map(Number).filter(Number.isFinite);
+    if (list.length) { if (symOn) setSym(Math.abs(rand(list))); else setAz('M', rand(list)); }
+  }
+  if ($('#rndSide').checked && Math.random() < 0.5) { az.T = wrap(-az.T); az.M = wrap(-az.M); draw(); }
+  setPhase('playing'); setStatus('Décodage…'); $('#fb').textContent = ''; $('#fb').className = '';
+  try {
+    const [to, mo] = await Promise.all([getBuf(te), getBuf(me)]);
+    cur = {te, me, to, mo, answered:false};
+    playCurrent();
+  } catch (err) {
+    chainRun = false;
+    setPhase(cur ? 'done' : 'idle');
+    setStatus('Erreur audio : ' + (err && err.message ? err.message : err));
+  }
+}
+function answer(color, num){
+  if (phase !== 'answering' || !cur) return;
+  const rt = Math.round(performance.now() - cur.tEnable);
+  const te = cur.te, ok = (color === te.color && num === te.number);
+  cur.answered = true;
+  pushLog(cur, {color, num, ok, rt});
+  setPhase('done'); setInfo(); renderLog();
+  const fb = $('#fb');
+  fb.className = ok ? 'ok' : 'ko';
+  fb.textContent = ok ? 'Correct ✓' : 'Incorrect ✗ — attendu : ' + te.color + ' ' + te.number;
+  setStatus('');
+}
+
+/* ---------- journal ---------- */
+function pushLog(t, resp){
+  const te = t.te; trialNo++;
+  log.push({
+    trial: trialNo, timestamp: new Date().toISOString(), participant: $('#pid').value.trim(),
+    mode: resp ? 'reponse' : 'enchaine',
+    target_file: te.name, target_callsign: te.callsign, target_color: te.color, target_number: te.number,
+    masker_file: t.me.name, masker_callsign: t.me.callsign, masker_color: t.me.color, masker_number: t.me.number,
+    target_az: t.azT, masker_az: t.azM, separation: sepOf(t.azT, t.azM), snr_db: t.snr,
+    resp_color: resp ? resp.color : '', resp_number: resp ? resp.num : '',
+    correct: resp ? (resp.ok ? 1 : 0) : '', rt_ms: resp ? resp.rt : ''
+  });
+}
+function renderLog(){
+  const tb = $('#logTable tbody'); tb.innerHTML = '';
+  log.forEach(r => {
+    const has = r.correct !== '';
+    const tr = document.createElement('tr');
+    [r.trial, cap(r.target_callsign) + ' ' + r.target_color + ' ' + r.target_number,
+     cap(r.masker_callsign) + ' ' + r.masker_color + ' ' + r.masker_number,
+     r.target_az + '°', r.masker_az + '°', r.separation + '°', r.snr_db,
+     has ? r.resp_color + ' ' + r.resp_number : '—', has ? (r.correct ? '✓' : '✗') : '—', has ? r.rt_ms : '—'].forEach(v => {
+      const td = document.createElement('td'); td.textContent = v; tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+  const g = new Map();
+  log.filter(r => r.correct !== '').forEach(r => { const o = g.get(r.separation) || {n:0, ok:0}; o.n++; o.ok += r.correct; g.set(r.separation, o); });
+  const nChain = log.filter(r => r.correct === '').length;
+  const box = $('#sum'); box.innerHTML = '';
+  if (nChain) {
+    const p = document.createElement('div'); p.className = 'small'; p.style.marginBottom = '6px';
+    p.textContent = nChain + ' essai' + (nChain > 1 ? 's' : '') + ' enchaîné' + (nChain > 1 ? 's' : '') + ' sans réponse, non compté' + (nChain > 1 ? 's' : '') + ' dans les pourcentages.';
+    box.appendChild(p);
+  }
+  if (g.size) {
+    const t = document.createElement('table');
+    t.innerHTML = '<thead><tr><th>Séparation</th><th>Essais</th><th>Correct</th></tr></thead>';
+    const b = document.createElement('tbody');
+    [...g.entries()].sort((x, y) => x[0] - y[0]).forEach(([k, o]) => {
+      const tr = document.createElement('tr');
+      [k + '°', o.n, o.ok + '/' + o.n + ' (' + Math.round(100 * o.ok / o.n) + ' %)'].forEach(v => {
+        const td = document.createElement('td'); td.textContent = v; tr.appendChild(td);
+      });
+      b.appendChild(tr);
+    });
+    t.appendChild(b); box.appendChild(t);
+  }
+  $('#btnCsv').disabled = !log.length; $('#btnClear').disabled = !log.length;
+}
+function toCSV(){
+  const head = Object.keys(log[0]);
+  const esc = v => { v = (v == null ? '' : String(v)); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  return '﻿' + [head.join(';')].concat(log.map(r => head.map(h => esc(r[h])).join(';'))).join('\r\n');
+}
+function downloadCSV(){
+  const id = ($('#pid').value.trim().replace(/[^A-Za-z0-9_-]/g, '') || 'sans-id');
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  const name = 'VegahSpatial_' + id + '_' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + '.csv';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([toCSV()], {type:'text/csv;charset=utf-8'}));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ---------- plan graphique ---------- */
+const svg = $('#space'), NS = 'http://www.w3.org/2000/svg';
+const CX = 160, CY = 160, RT = 105, RM = 105;
+const pol = (a, r) => { const t = a * Math.PI / 180; return [CX + r * Math.sin(t), CY - r * Math.cos(t)]; };
+function el(name, attrs, parent){
+  const e = document.createElementNS(NS, name);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+(function buildTicks(){
+  const g = $('#ticks');
+  for (let a = -180; a < 180; a += 15) {
+    const major = (a % 45 === 0);
+    const [x1, y1] = pol(a, 118), [x2, y2] = pol(a, major ? 128 : 123);
+    el('line', {class:'tick', x1, y1, x2, y2}, g);
+  }
+  [0, 45, 90, 135, 180, -135, -90, -45].forEach(a => {
+    const [x, y] = pol(a, 144);
+    const t = el('text', {x, y}, g); t.textContent = (a === 0 ? '0' : a) + '°';
+  });
+})();
+const hs = {
+  T: {g:$('#hT'), line:$('#lineT'), c:$('#hT circle'), r:RT},
+  M: {g:$('#hM'), line:$('#lineM'), c:$('#hM circle'), r:RM}
+};
+function draw(){
+  ['T', 'M'].forEach(k => {
+    const [x, y] = pol(az[k], hs[k].r);
+    hs[k].g.setAttribute('transform', 'translate(' + x + ',' + y + ')');
+    hs[k].line.setAttribute('x2', x); hs[k].line.setAttribute('y2', y);
+    hs[k].c.setAttribute('stroke-width', (!symOn && active === k) ? 4 : 1.5);
+    const inp = $('#az' + k);
+    if (document.activeElement !== inp) inp.value = az[k];
+  });
+  const sp = sepOf(az.T, az.M);
+  $('#sep').textContent = sp + '°';
+  $('#sepVal').textContent = sp + '°';
+  $('#sepRange').value = sp;
+  if (az.T < 0) $('#side').value = 'L'; else if (az.T > 0) $('#side').value = 'R';
+  $('#symBox').style.display = symOn ? '' : 'none';
+  $('#freeBox').style.display = symOn ? 'none' : '';
+  $('#actRow').style.display = symOn ? 'none' : '';
+  $('#azT').disabled = symOn; $('#azM').disabled = symOn;
+}
+function setAz(k, a){
+  const step = +$('#snap').value || 1;
+  const v = wrap(Math.round(wrap(a) / step) * step);
+  if (symOn) {
+    // symétrie : la source déplacée fixe la séparation et le côté, l'autre est son image miroir
+    const v2 = Math.max(-90, Math.min(90, v));
+    az[k] = v2 || 0; az[k === 'T' ? 'M' : 'T'] = (-v2) || 0;
+  } else az[k] = v;
+  draw();
+}
+function setSym(sep, side){
+  const step = +$('#snap').value || 1;
+  sep = Math.max(0, Math.min(180, Math.round(sep / step) * step));
+  const h = sep / 2;
+  side = side || ($('#side').value === 'R' ? 'R' : 'L');
+  az.T = (side === 'L' ? -h : h) || 0;
+  az.M = (-az.T) || 0;
+  draw();
+}
+function angFromEvent(e){
+  const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  return Math.atan2(p.x - CX, -(p.y - CY)) * 180 / Math.PI;
+}
+function setActive(k){
+  active = k;
+  document.querySelector('input[name=act][value=' + k + ']').checked = true;
+  draw();
+}
+svg.addEventListener('pointerdown', e => {
+  const h = e.target.closest ? e.target.closest('[data-h]') : null;
+  if (h) active = h.getAttribute('data-h');
+  else if (symOn) active = 'T';
+  setActive(active);
+  drag = active;
+  try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+  setAz(drag, angFromEvent(e));
+  e.preventDefault();
+});
+svg.addEventListener('pointermove', e => { if (drag) setAz(drag, angFromEvent(e)); });
+const endDrag = () => { drag = null; };
+svg.addEventListener('pointerup', endDrag);
+svg.addEventListener('pointercancel', endDrag);
+document.querySelectorAll('input[name=act]').forEach(r => r.addEventListener('change', () => setActive(r.value)));
+['T', 'M'].forEach(k => {
+  $('#az' + k).addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    if (!symOn && Number.isFinite(v)) { az[k] = wrap(v); draw(); }
+  });
+  $('#az' + k).addEventListener('change', () => { if (!symOn) setAz(k, az[k]); });
+});
+document.querySelectorAll('[data-sep]').forEach(b => b.addEventListener('click', () => setSym(+b.getAttribute('data-sep'))));
+$('#sepRange').addEventListener('input', e => setSym(+e.target.value));
+$('#side').addEventListener('change', () => setSym(sepOf(az.T, az.M), $('#side').value));
+$('#sym').addEventListener('change', () => {
+  symOn = $('#sym').checked;
+  if (symOn) setSym(sepOf(az.T, az.M), az.T < 0 ? 'L' : (az.T > 0 ? 'R' : null)); else draw();
+});
+
+/* ---------- câblage ---------- */
+const grid = $('#grid');
+COLOR_LIST.forEach(c => {
+  const row = document.createElement('div'); row.className = 'grow';
+  const lab = document.createElement('span'); lab.className = 'glab'; lab.textContent = c; row.appendChild(lab);
+  NUMS.forEach(n => {
+    const b = document.createElement('button');
+    b.className = 'cell c-' + c; b.textContent = n; b.disabled = true;
+    b.setAttribute('aria-label', c + ' ' + n);
+    b.addEventListener('click', () => answer(c, n));
+    row.appendChild(b);
+  });
+  grid.appendChild(row);
+});
+$('#pickDirBtn').addEventListener('click', () => $('#pickDir').click());
+$('#pickFilesBtn').addEventListener('click', () => $('#pickFiles').click());
+$('#pickDir').addEventListener('change', e => loadFiles(e.target.files));
+$('#pickFiles').addEventListener('change', e => loadFiles(e.target.files));
+$('#btnReparse').addEventListener('click', reparse);
+$('#btnPlay').addEventListener('click', () => {
+  chainRun = $('#chain').checked; chainCount = 0;
+  if (gapTimer) { clearTimeout(gapTimer); gapTimer = null; }
+  newTrial();
+});
+function stopChain(){
+  chainRun = false;
+  if (gapTimer) { clearTimeout(gapTimer); gapTimer = null; }
+}
+$('#chain').addEventListener('change', () => {
+  if ($('#chain').checked) return;
+  const was = chainRun;
+  stopChain();
+  if (was) { playToken++; stopAll(); setPhase(cur ? 'done' : 'idle'); setStatus('Enchaînement arrêté.'); }
+});
+$('#btnReplay').addEventListener('click', () => { if (cur) { $('#fb').textContent = ''; $('#fb').className = ''; playCurrent(); } });
+$('#btnStop').addEventListener('click', () => {
+  const wasChain = chainRun || $('#chain').checked;
+  stopChain(); playToken++; stopAll();
+  setPhase(!cur ? 'idle' : ((cur.answered || wasChain) ? 'done' : 'answering'));
+  if (cur && phase === 'answering') cur.tEnable = performance.now();
+  setStatus(wasChain ? 'Enchaînement arrêté.' : 'Lecture interrompue.');
+});
+$('#btnSynth').addEventListener('click', synthTest);
+$('#btnCsv').addEventListener('click', () => { if (log.length) downloadCSV(); });
+$('#btnClear').addEventListener('click', () => { if (confirm('Vider le journal des essais ?')) { log = []; trialNo = 0; renderLog(); } });
+$('#hideId').addEventListener('change', setInfo);
+$('#snap').addEventListener('change', () => { $('#sepRange').step = $('#snap').value; if (symOn) setSym(sepOf(az.T, az.M)); else { setAz('T', az.T); setAz('M', az.M); } });
+function updMaster(){
+  const v = +$('#master').value;
+  $('#masterTxt').textContent = v + ' dB · cible ≈ ' + Math.round(20 * Math.log10(REF_RMS) + v) + ' dBFS RMS (une limitation évite l\'écrêtage)';
+}
+$('#master').addEventListener('input', updMaster);
+window.addEventListener('beforeunload', e => { if (log.length) { e.preventDefault(); e.returnValue = ''; } });
+
+updMaster(); draw(); renderLog(); setPhase('idle');
+window.__vs = {get log(){ return log; }, get cur(){ return cur; }, get phase(){ return phase; }, az};
+})();
+</script>
+</body>
+</html>

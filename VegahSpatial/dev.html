@@ -698,6 +698,17 @@ $('#master').addEventListener('input', updMaster);
 window.addEventListener('beforeunload', e => { if (log.length) { e.preventDefault(); e.returnValue = ''; } });
 
 updMaster(); draw(); renderLog(); setPhase('idle');
+/* version autonome : si le build a embarqué des phrases (window.EMBEDDED_AUDIO), on les charge directement */
+if (window.EMBEDDED_AUDIO) {
+  const files = Object.keys(window.EMBEDDED_AUDIO).map(n => {
+    const bin = atob(window.EMBEDDED_AUDIO[n]), u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return new File([u8], n, {type: 'audio/mpeg'});
+  });
+  loadFiles(files);
+  $('#corpusInfo').textContent += ' · corpus intégré à cette page (locuteur masculin T0), aucun fichier à charger';
+  document.title = 'VegahSpatial — version autonome';
+}
 window.__vs = {get log(){ return log; }, get cur(){ return cur; }, get phase(){ return phase; }, az};
 })();
 </script>

@@ -12,6 +12,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system
 header{padding:14px 20px;border-bottom:1px solid var(--line);background:var(--card);display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
 header h1{font-size:18px;margin:0}
 header .tag{font-size:12px;color:var(--mut)}
+.btn-contact{margin-left:auto;font-size:12px;padding:6px 12px;color:var(--mut)}
+.btn-contact:hover{color:var(--ink);border-color:var(--acc)}
 .warn{margin:12px 20px 0;padding:10px 12px;border:1px solid #d9a441;background:#fff7e0;color:#5b4300;border-radius:8px;font-size:13px}
 @media (prefers-color-scheme:dark){.warn{background:#3a2f12;color:#f2d99a;border-color:#7a5f1c}}
 main{display:grid;grid-template-columns:minmax(320px,440px) 1fr;gap:14px;padding:14px 20px 40px;align-items:start}
@@ -63,6 +65,8 @@ summary{cursor:pointer;color:var(--mut)}
 <header>
   <h1>VegahSpatial</h1>
   <span class="tag">Version développeur · tâche CRM spatialisée · 1 masqueur · angle choisi à chaque essai</span>
+
+  <button type="button" id="btnContactReferent" class="btn-contact" title="Écrire au médecin référent de l'IRBA">✉ Contact Médecin référent IRBA</button>
 </header>
 <div class="warn"><b>Casque obligatoire.</b> La spatialisation utilise le filtre HRTF générique du navigateur (pas une HRTF individuelle) et le niveau acoustique n'est pas calibré. Outil de recherche en développement, pas un examen.</div>
 
@@ -711,6 +715,10 @@ if (window.EMBEDDED_AUDIO) {
 }
 window.__vs = {get log(){ return log; }, get cur(){ return cur; }, get phase(){ return phase; }, az};
 })();
+
+document.getElementById("btnContactReferent").addEventListener("click",function(){
+  window.location.href="mailto:guillaume.andeol@intradef.gouv.fr?subject="+encodeURIComponent("VegahSpatial — tâche CRM spatialisée (version développeur)");
+});
 </script>
 </body>
 </html>

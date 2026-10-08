@@ -837,13 +837,30 @@ ol.phases li + li { border-top: 1px solid var(--line, rgba(255,255,255,0.12)); }
 @media print { .pdf-overlay { display: none !important; } }
 .test-reminder { text-align: center; margin: 4px 0 10px; }
 
+.topbar { flex-wrap: wrap; gap: 8px 14px; }
+.topbar-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.btn-contact {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.btn-contact:hover, .btn-contact:focus-visible { color: var(--text); border-color: var(--accent); }
+
 </style>
 </head>
-<body>
+<body data-contact-suffix=" — passation simulée">
 
 <header class="topbar">
   <div class="brand">Vegah <span class="version-badge" title="Version développeur — passation simulée">v4 DEV</span> <span class="brand-sub">Passation automatique</span></div>
-  <div id="trialCounter" class="trial-counter"></div>
+  <div class="topbar-right">
+    <div id="trialCounter" class="trial-counter"></div>
+    <button type="button" id="btnContactReferent" class="btn-contact" title="Écrire au médecin référent de l'IRBA">✉ Contact Médecin référent IRBA</button>
+  </div>
 </header>
 
 <div class="institution-bar">
@@ -3176,6 +3193,18 @@ function readTestMode() {
   return (r && TEST_MODES[r.value]) ? r.value : DEFAULT_TEST_MODE;
 }
 
+// Contact du médecin référent IRBA : ouvre le client de messagerie (mailto:)
+// avec, en objet, le type de test (mode courant : test court / test complet).
+const REFERENT_EMAIL = "guillaume.andeol@intradef.gouv.fr";
+function contactSubject() {
+  const m = TEST_MODES[readTestMode()] || TEST_MODES[DEFAULT_TEST_MODE];
+  const suffix = document.body.getAttribute("data-contact-suffix") || "";
+  return "Vegah v4 — " + m.patientLabel + " (" + m.label.toLowerCase() + ")" + suffix;
+}
+function contactReferent() {
+  window.location.href = "mailto:" + REFERENT_EMAIL + "?subject=" + encodeURIComponent(contactSubject());
+}
+
 async function startSession() {
   let blocked = false;
   for (const guard of startGuards) if (guard() === false) blocked = true;
@@ -3264,6 +3293,7 @@ function wireSetupScreen() {
   on("#btnPreviewStandard", "click", () => previewNoise("standard"));
 
   on("#btnStart", "click", startSession);
+  on("#btnContactReferent", "click", contactReferent);
   on("#btnPlay", "click", onPlayClicked);
   on("#btnReplay", "click", replayCurrent);
   on("#btnStop", "click", () => { finishTest(); });

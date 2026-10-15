@@ -130,7 +130,17 @@ summary{cursor:pointer;color:var(--mut)}
       <input type="range" id="master" min="-40" max="10" step="1" value="0" style="width:100%">
       <div class="small" id="masterTxt"></div>
       <label class="inl"><input type="checkbox" id="loopM" checked> boucler le masqueur s'il est plus court que la cible</label>
-      <label class="inl"><input type="checkbox" id="diffTalker" checked> préférer un masqueur d'un autre locuteur</label>
+      <div class="two">
+        <div><label for="ttalker">Locuteur de la cible</label>
+          <select id="ttalker"><option value="">tous (au hasard)</option></select></div>
+        <div><label for="mtalker">Locuteur du masqueur</label>
+          <select id="mtalker">
+            <option value="diff">différent de la cible</option>
+            <option value="same">même que la cible</option>
+            <option value="">tous (au hasard)</option>
+          </select></div>
+      </div>
+      <div class="small" id="talkerNote"></div>
       <label class="inl"><input type="checkbox" id="rndM"> tirer au hasard à chaque essai la distance angulaire (mode symétrique) ou l'angle du masqueur (mode libre)</label>
       <input type="text" id="rndList" value="0,30,60,90,120,180" aria-label="Valeurs possibles, en degrés">
       <label class="inl"><input type="checkbox" id="rndSide"> inverser au hasard gauche/droite à chaque essai</label>
@@ -259,6 +269,8 @@ function parseEntry(file){
       }
     } catch (err) { /* expression invalide : fichiers non reconnus */ }
   } else heuristic(e);
+  const sx = /(?:^|[_\-\s])([MFmf])(?=[_\-\s])/.exec(e.name);
+  if (sx) e.sex = sx[1].toUpperCase();
   e.ok = !!(e.callsign && COLOR_LIST.includes(e.color) && NUMS.includes(e.number));
   return e;
 }
@@ -266,6 +278,25 @@ function loadFiles(fileList){
   rawFiles = Array.from(fileList).filter(f => AUDIO_EXT.test(f.name));
   cache.clear();
   reparse();
+}
+function talkerLabel(t, sex){ return t.toUpperCase() + (sex === 'M' ? ' (homme)' : sex === 'F' ? ' (femme)' : ''); }
+function fillTalkers(ok){
+  const sexOf = new Map();
+  ok.forEach(e => { if (e.talker && !sexOf.has(e.talker)) sexOf.set(e.talker, e.sex); });
+  const list = [...sexOf.keys()].sort();
+  const fixed = {ttalker: [['', 'tous (au hasard)']],
+                 mtalker: [['diff', 'différent de la cible'], ['same', 'même que la cible'], ['', 'tous (au hasard)']]};
+  ['ttalker', 'mtalker'].forEach(id => {
+    const sel = $('#' + id), prev = sel.value;
+    sel.innerHTML = '';
+    fixed[id].concat(list.map(t => [t, talkerLabel(t, sexOf.get(t))])).forEach(([v, txt]) => {
+      const o = document.createElement('option'); o.value = v; o.textContent = txt; sel.appendChild(o);
+    });
+    if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+  });
+  $('#talkerNote').textContent = list.length
+    ? list.length + ' locuteur' + (list.length > 1 ? 's' : '') + ' dans le corpus chargé : ' + list.map(t => talkerLabel(t, sexOf.get(t))).join(', ') + '.'
+    : '';
 }
 function reparse(){
   corpus = rawFiles.map(parseEntry);
@@ -279,6 +310,7 @@ function reparse(){
     const o = document.createElement('option'); o.value = k; o.textContent = cap(k) + ' (' + counts.get(k) + ')'; sel.appendChild(o);
   });
   if (counts.has(prev)) sel.value = prev; else if (counts.has('delta')) sel.value = 'delta';
+  fillTalkers(ok);
   $('#corpusInfo').textContent = rawFiles.length
     ? rawFiles.length + ' fichiers audio · ' + ok.length + ' reconnus · ' + bad.length + ' non reconnus'
     : 'Aucun fichier audio dans la sélection.';
@@ -431,7 +463,7 @@ function setInfo(){
   const box = $('#info');
   if (!cur) { box.textContent = ''; return; }
   const hide = $('#hideId').checked && !cur.answered;
-  const d = e => cap(e.callsign) + ' ' + e.color + ' ' + e.number + ' (' + e.name + ')';
+  const d = e => cap(e.callsign) + ' ' + e.color + ' ' + e.number + ' · ' + (e.talker ? e.talker.toUpperCase() : '?') + ' (' + e.name + ')';
   box.textContent = hide
     ? 'Essai ' + (trialNo + (cur.answered ? 0 : 1)) + ' · identité des phrases masquée jusqu\'à la réponse.'
     : 'Cible : ' + d(cur.te) + ' · Masqueur : ' + d(cur.me);
@@ -439,12 +471,16 @@ function setInfo(){
 async function newTrial(){
   if (!corpus.some(e => e.ok)) { chainRun = false; setStatus('Aucun fichier exploitable : charge le corpus, ou utilise le test de spatialisation.'); return; }
   const cs = $('#tcs').value;
-  const targets = corpus.filter(e => e.ok && e.callsign === cs);
-  if (!targets.length) { chainRun = false; setStatus('Aucune phrase pour cet indicatif.'); return; }
+  const tt = $('#ttalker').value;
+  const targets = corpus.filter(e => e.ok && e.callsign === cs && (!tt || e.talker === tt));
+  if (!targets.length) { chainRun = false; setStatus('Aucune phrase pour cet indicatif' + (tt ? ' et ce locuteur' : '') + '.'); return; }
   const te = rand(targets);
   let ms = corpus.filter(e => e.ok && e.callsign !== te.callsign && e.color !== te.color && e.number !== te.number);
-  if ($('#diffTalker').checked && te.talker) { const m2 = ms.filter(e => e.talker !== te.talker); if (m2.length) ms = m2; }
-  if (!ms.length) { chainRun = false; setStatus('Aucun masqueur compatible (indicatif, couleur et chiffre différents de la cible).'); return; }
+  const mt = $('#mtalker').value;
+  if (mt === 'diff') { if (te.talker) { const m2 = ms.filter(e => e.talker !== te.talker); if (m2.length) ms = m2; } }
+  else if (mt === 'same') ms = ms.filter(e => e.talker === te.talker);
+  else if (mt) ms = ms.filter(e => e.talker === mt);
+  if (!ms.length) { chainRun = false; setStatus('Aucun masqueur compatible' + (mt && mt !== 'diff' ? ' avec ce choix de locuteur' : '') + ' (indicatif, couleur et chiffre doivent différer de la cible).'); return; }
   const me = rand(ms);
   if ($('#rndM').checked) {
     const list = $('#rndList').value.split(/[,;\s]+/).map(Number).filter(Number.isFinite);
@@ -481,6 +517,7 @@ function pushLog(t, resp){
   log.push({
     trial: trialNo, timestamp: new Date().toISOString(), participant: $('#pid').value.trim(),
     mode: resp ? 'reponse' : 'enchaine',
+    target_talker: te.talker || '', masker_talker: t.me.talker || '',
     target_file: te.name, target_callsign: te.callsign, target_color: te.color, target_number: te.number,
     masker_file: t.me.name, masker_callsign: t.me.callsign, masker_color: t.me.color, masker_number: t.me.number,
     target_az: t.azT, masker_az: t.azM, separation: sepOf(t.azT, t.azM), snr_db: t.snr,
